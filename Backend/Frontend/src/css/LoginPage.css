@@ -1,0 +1,90 @@
+
+body{
+    background-color: grey;
+    color: black;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.login-container{
+    background-color:black;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px orange;
+    width: 320px;
+    text-align: center;
+}
+.login-container h1{
+    color: orange;
+    margin-bottom: 20px;
+    font-size: bold;
+}
+.login-container input{
+    width: 95%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+    font-size: 14px;
+}
+.login-container button{
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: blue;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.login-container button:hover{
+    background-color: white;
+}
+.login-container a{
+    color:darkgreen;
+    text-decoration: none;
+
+}
+.login-container a:hover{
+    text-decoration: underline;
+}
+.register-container select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+}
+.brand-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: orange;
+  margin-bottom: 10px;
+}
+
+.brand-subtitle {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+.password-wrapper{
+    position: relative;
+    width: 100%;
+}
+.password-wrapper input{
+    width: 90%;
+    padding-right: 25px;
+}
+.toggle-password {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  user-select: none;
+  font-size: 18px;
+}
+

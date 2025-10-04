@@ -1,0 +1,95 @@
+/* Navbar fixed at top */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: black;
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 15px orange;
+  z-index: 1000;
+  font-family: Arial, sans-serif;
+}
+
+/* Flex container: brand left, center links, logout right */
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap; /* allow wrapping on small screens */
+}
+
+/* Brand/logo */
+.navbar-brand a {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: orange;
+  text-decoration: none;
+}
+
+.navbar-brand a:hover {
+  color:coral;
+}
+
+/* Center links */
+.navbar-links {
+  list-style: none;
+  display: flex;
+  gap: 3rem; /* space between links */
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  justify-content: center; /* center horizontally */
+  min-width: 200px; /* prevent too small links container */
+}
+
+.navbar-links li a {
+  color:orange;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.navbar-links li a:hover {
+  color:coral;
+}
+
+/* Logout on right */
+.navbar-logout button {
+  background: none;
+  border: none;
+  color: orange;
+  cursor: pointer;
+  font: inherit;
+  transition: color 0.2s ease;
+}
+
+.navbar-logout button:hover {
+  color:coral;
+}
+
+/* Responsive: Mobile screens */
+@media (max-width: 768px) {
+  .navbar-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .navbar-links {
+    justify-content: flex-start;
+    gap: 1.5rem;
+    margin: 0.5rem 0;
+  }
+
+  .navbar-logout {
+    align-self: flex-end;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Push page content below navbar */
+body {
+  padding-top: 70px;
+}
