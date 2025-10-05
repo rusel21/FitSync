@@ -34,3 +34,4 @@ Route::post('/staff', [StaffController::class, 'store']);       // add new staff
 Route::put('/staff/{staff_id}', [StaffController::class, 'update']);  // update staff
 Route::delete('/staff/{staff_id}', [StaffController::class, 'destroy']); // delete staff
 Route::post('/staff/upload-picture/{staff_id}',[StaffController::class,'uploadPicture']); //upload picture staff
+Route::get('/staff/image/{filename}',[StaffController::class,'getImage']);// get image
