@@ -4,7 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\StaffController; // ✅ add this
+use App\Http\Controllers\StaffController; 
+use App\Http\Controllers\UserAttendanceLogController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -35,3 +36,13 @@ Route::put('/staff/{staff_id}', [StaffController::class, 'update']);  // update 
 Route::delete('/staff/{staff_id}', [StaffController::class, 'destroy']); // delete staff
 Route::post('/staff/upload-picture/{staff_id}',[StaffController::class,'uploadPicture']); //upload picture staff
 Route::get('/staff/image/{filename}',[StaffController::class,'getImage']);// get image
+
+// ==================
+// User attendance logs
+// ==================
+
+
+
+Route::get('/attendance', [UserAttendanceLogController::class, 'index']);
+Route::post('/attendance/checkin', [UserAttendanceLogController::class, 'checkIn']);
+Route::put('/attendance/checkout/{id}', [UserAttendanceLogController::class, 'checkOut']);
