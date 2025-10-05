@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('user_attendance_logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id'); // FK to users table
+            $table->string('user_id'); // FK to users table
             $table->dateTime('check_in')->nullable();
             $table->dateTime('check_out')->nullable();
             $table->timestamps();
