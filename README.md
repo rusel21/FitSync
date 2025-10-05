@@ -40,7 +40,7 @@ Example:
 bash
 Always show details
 
-Copy code
+
 git checkout -b feature-add-member-form
 ✏️ Step 4: Make and Commit Your Changes
 Edit the files as needed. Then save and run:
@@ -48,7 +48,7 @@ Edit the files as needed. Then save and run:
 bash
 Always show details
 
-Copy code
+
 git add .
 git commit -m "Describe what you changed here"
 🚀 Step 5: Push Your Branch to GitHub
@@ -57,7 +57,7 @@ Upload your work to the shared repository:
 bash
 Always show details
 
-Copy code
+
 git push origin feature-branch-name
 🔁 Step 6: Open a Pull Request (PR)
 Go to the GitHub repo page: https://github.com/rusel21/FitSync
@@ -76,7 +76,7 @@ If the collaborator is MarcHael-28, their steps are:
 bash
 Always show details
 
-Copy code
+
 git clone https://github.com/rusel21/FitSync.git
 cd FitSync
 git checkout -b marc-feature-branch
@@ -91,7 +91,7 @@ Always pull the latest version before starting new work:
 bash
 Always show details
 
-Copy code
+
 git pull origin main
 🧠 Quick Reference
 Action	Command
