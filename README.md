@@ -14,7 +14,7 @@ You’ll receive an **email** or **GitHub notification** saying:
 Click **“View Invitation”** → then **“Accept invitation.”**  
 Once accepted, you can visit the repository at:
 
-👉 https://github.com/rusel21/FitSync
+👉 https://github.com/ruselportes/FitSync
 
 ---
 
@@ -23,7 +23,7 @@ Once accepted, you can visit the repository at:
 Open your terminal or VS Code and run:
 
 ```bash
-git clone https://github.com/rusel21/FitSync.git
+git clone https://github.com/ruselportes/FitSync.git
 cd FitSync
 This downloads the project to your local computer.
 
@@ -60,7 +60,7 @@ Always show details
 
 git push origin feature-branch-name
 🔁 Step 6: Open a Pull Request (PR)
-Go to the GitHub repo page: https://github.com/rusel21/FitSync
+Go to the GitHub repo page: https://github.com/ruselportes/FitSync
 
 Click “Compare & pull request.”
 
@@ -68,7 +68,7 @@ Add a short description.
 
 Click “Create pull request.”
 
-The project owner (rusel21) will review and merge it.
+The project owner (ruselportes) will review and merge it.
 
 👥 Collaborator Example
 If the collaborator is MarcHael-28, their steps are:
@@ -77,7 +77,7 @@ bash
 Always show details
 
 
-git clone https://github.com/rusel21/FitSync.git
+git clone https://github.com/ruselportes/FitSync.git
 cd FitSync
 git checkout -b marc-feature-branch
 git add .
