@@ -9,7 +9,6 @@ import MemberManagement from "./pages/staff/MemberManagement";
 import CheckInSystem from "./pages/staff/CheckInSystem";
 import PaymentTracking from "./pages/staff/PaymentTracking";
 import StaffProfile from "./pages/staff/StaffProfile";
-git 
 
 function App() {
   return (
