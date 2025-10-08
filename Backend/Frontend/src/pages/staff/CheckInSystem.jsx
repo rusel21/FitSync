@@ -74,6 +74,7 @@ export default function CheckInSystem() {
               <tr>
                 <th>ID</th>
                 <th>User ID</th>
+                <th>Name</th>
                 <th>Check-in</th>
                 <th>Check-out</th>
               </tr>
@@ -86,7 +87,8 @@ export default function CheckInSystem() {
                   onClick={() => setSelected(m.id)}
                 >
                   <td>{m.id}</td>
-                  <td>{m.user_id}</td>
+                  <td>{m.user_code || m.user_id}</td>
+                  <td>{m.user_name || "-"}</td>
                   <td>{m.check_in ? new Date(m.check_in).toLocaleTimeString() : "-"}</td>
                   <td className={m.check_out ? "highlight" : ""}>
                     {m.check_out ? new Date(m.check_out).toLocaleTimeString() : "-"}

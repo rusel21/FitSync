@@ -19,7 +19,10 @@ class UserAttendanceLogController extends Controller
 
         // 2️⃣ Select all attendance log fields (a.*)
         //    plus the user's name as "user_name"
-        ->select('a.*', 'u.name as user_name')
+        ->select('a.*', 
+            'u.name as user_name',
+            'u.user_id as user_code'//this will hold SYNC-0001
+            )
 
         // 3️⃣ Sort by most recent check-in first
         ->orderBy('a.check_in', 'desc')
