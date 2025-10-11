@@ -21,12 +21,13 @@ function App() {
         <Route path="/userdashboard" element={<UserDashBoard/>} />
         <Route path="/user/membership" element={<Membership/>}/>
         <Route path="/user/payment" element={<Payment/>}/>
-        <Route path="/admin" element={<AdminDashboard/>}/>
+        <Route path="/admin/dashboard" element={<AdminDashboard/>}/>
         <Route path="/staff/profile" element={<StaffProfile/>}/>
         <Route path="/staff/checkinsystem" element={<CheckInSystem/>}/>
         <Route path ="/staff/paymenttracking" element = {<PaymentTracking/>}/>
         <Route path="/staff/membermanagement" element = {<MemberManagement/>}/>
         <Route path="/admin/membershipplanmanagement" element = {<MembershipPlanManagement/>}/>
+         <Route path="/admin/membermanagement" element = {<MemberManagement/>}/>  
       </Routes>
      
     </Router>

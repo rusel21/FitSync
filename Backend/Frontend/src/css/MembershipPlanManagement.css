@@ -1,237 +1,149 @@
-/* Fonts & Reset */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined");
-
-body,
-html {
-  margin: 0;
-  padding: 0;
-  font-family: "Inter", sans-serif;
-  background-color: #111827;
-  color: #f0f4f2;
-}
-
-/* Layout */
-.membership-container {
-  padding: 3rem 1rem;
-  min-height: 100vh;
-}
-
-.content-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Title Section */
-.title-section {
+/* Layout container with sidebar + content */
+.admin-layout {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-  flex-wrap: wrap;
-}
-
-.title-text h2 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0;
-}
-
-.title-text p {
-  color: #9ca3af;
-  font-size: 1.1rem;
-  margin-top: 0.5rem;
-  max-width: 600px;
-}
-
-.create-btn {
-  background-color: #f97316;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0f172a;
   color: #fff;
-  font-weight: 700;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.8rem 1.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  transition: background-color 0.2s ease;
+  font-family: "Inter", sans-serif;
+  overflow: hidden;
 }
 
-.create-btn:hover {
-  background-color: #ea6610;
+/* Main content area (next to sidebar) */
+.membership-container {
+  flex: 1;
+  padding: 40px 60px;
+  margin-left: 240px; /* ✅ space for the NavAdmin sidebar */
+  box-sizing: border-box;
+  overflow-y: auto;
+  height: 100vh;
+  background-color: #0f172a; /* Ensure background extends fully */
 }
 
-/* Grid Layout */
-.grid-container {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 2rem;
-}
-
-@media (max-width: 900px) {
-  .grid-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Plan Cards */
-.plan-card {
-  background-color: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-}
-
-.plan-header {
+/* Header section */
+.membership-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-}
-
-.plan-header h4 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.plan-price {
-  display: inline-block;
-  margin-top: 0.3rem;
-  font-size: 1.8rem;
-  font-weight: 900;
-}
-
-.plan-period {
-  font-size: 0.9rem;
-  color: #9ca3af;
-  margin-left: 0.2rem;
-}
-
-.plan-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.icon-btn {
-  background: transparent;
-  border: none;
-  color: #9ca3af;
-  border-radius: 50%;
-  padding: 0.4rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.icon-btn:hover {
-  background-color: #374151;
-}
-
-.plan-footer {
-  border-top: 1px solid #374151;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  color: #9ca3af;
-  font-size: 0.9rem;
-}
-
-.group-icon {
-  color: #f97316;
-  font-size: 1rem;
-  vertical-align: middle;
-  margin-right: 0.3rem;
-}
-
-/* Perks Section */
-.perks-section {
-  background-color: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 0.75rem;
-  padding: 2rem;
-}
-
-.perks-section h3 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 2rem;
-}
-
-.highlight {
-  color: #f97316;
-}
-
-.perk-item {
-  display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  transition: background-color 0.2s ease;
+  margin-bottom: 30px;
 }
 
-.perk-item:hover {
-  background-color: #2d3748;
+.membership-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
 }
 
-.perk-info {
-  flex: 1;
-}
-
-.perk-info label {
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.perk-info p {
+.membership-header p {
   color: #9ca3af;
-  font-size: 0.9rem;
-  margin-top: 0.2rem;
+  font-size: 0.95rem;
 }
 
-.perk-inputs {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.perk-inputs input {
-  background-color: #111827;
-  border: 1px solid #374151;
-  border-radius: 0.4rem;
-  color: #f0f4f2;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.9rem;
-  width: 4rem;
-}
-
-.perk-inputs input[type="text"] {
-  width: 5rem;
-}
-
-hr {
-  border: 0;
-  border-top: 1px solid #374151;
-}
-
-/* Save Button */
-.save-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-.save-btn {
+/* Add button */
+.add-btn {
   background-color: #f97316;
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  padding: 0.8rem 2rem;
+  border-radius: 6px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
 }
 
-.save-btn:hover {
-  background-color: #ea6610;
+.add-btn:hover {
+  background-color: #fb923c;
+}
+
+/* Table design */
+.membership-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+}
+
+.membership-table th,
+.membership-table td {
+  text-align: left;
+  padding: 16px 20px;
+  font-size: 0.95rem;
+}
+
+.membership-table th {
+  color: #cbd5e1;
+  font-weight: 600;
+  border-bottom: 1px solid #334155;
+  background-color: #0f172a;
+}
+
+.membership-table td {
+  color: #e2e8f0;
+  border-bottom: 1px solid #334155;
+  vertical-align: top;
+}
+
+.membership-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Action buttons */
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.edit-icon,
+.delete-icon {
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+
+.edit-icon {
+  color: #fbbf24;
+}
+
+.edit-icon:hover {
+  color: #fde68a;
+}
+
+.delete-icon {
+  color: #f87171;
+}
+
+.delete-icon:hover {
+  color: #fecaca;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+  .membership-container {
+    margin-left: 70px; /* collapsed sidebar */
+    padding: 20px;
+  }
+
+  .membership-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .membership-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .membership-table {
+    font-size: 0.85rem;
+  }
 }

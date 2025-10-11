@@ -1,38 +1,83 @@
+import {useState} from "react";
+import {FaHome,FaUser,FaDumbbell,FaChartBar,FaMoneyBillWave,FaClock,FaUserShield,FaCog,FaSignOutAlt} from "react-icons/fa";
+import "../../css/NavAdmin.css";
 import { Link } from 'react-router-dom';
-import '../../css/Navbar.css';
 
-export default function Navbar() {
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    window.location.href = '/login';
-  };
 
-  return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        {/* Left: Brand */}
-        <div className="navbar-brand">
-          <Link to="/admin">FitSync</Link>
-        </div>
+export default function NavAdmin(){
 
-        {/* Center: Links */}
-        <ul className="navbar-links">
-          <li>
-            <Link to="/admin/membershipplanmanagement">Membership Plan Management</Link>
-          </li>
-          <li>
-            <Link to="">Membership</Link>
-          </li>
-          <li>
-            <Link to="">Payment</Link>
-          </li>
-        </ul>
+  const[isOpen,setIsOpen]=useState(true);
 
-        {/* Right: Logout */}
-        <div className="navbar-logout">
-          <button onClick={handleLogout}>Logout</button>
-        </div>
+  const toggleSidebar=()=>{
+    setIsOpen(!isOpen);
+  }
+  return(
+    <div className={`sidebar ${isOpen ? "open" : "collapsed"}`}>
+      <div className="sidebar-header">
+        <h2 className="logo">
+          {isOpen ? "FitSync Admin" : "FS"}
+        </h2>
+        <button className="toggle-btn" onClick={toggleSidebar}>
+          </button>
       </div>
-    </nav>
-  );
+
+      <ul className="sidebar-menu">
+        <li>
+          <Link to="/admin/dashboard">
+          <FaHome/>
+          <span>Dashboard</span></Link>
+        </li>
+        <li>
+          <Link to ="/admin/membermanagement">
+          <FaUser/>
+          <span>Members</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="/admin/membershipplanmanagement">
+          <FaDumbbell/>
+          <span>Membership Plans</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="">
+          <FaClock/>
+          <span>Attendance</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="">
+          <FaChartBar/>
+          <span>Analytics</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="">
+          <FaMoneyBillWave/>
+          <span>Payments</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="">
+          <FaUserShield/>
+          <span>Roles&Permissions</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="">
+          <FaCog/>
+          <span>Settings</span>
+          </Link>
+        </li>
+        <li className="logout">
+          <Link to="/login" onClick={() => {localStorage.removeItem('auth_token');}}>
+          <FaSignOutAlt/>
+        <span>Logout</span>
+        </Link>
+        </li>
+      </ul>
+    </div>
+
+    
+  )
 }

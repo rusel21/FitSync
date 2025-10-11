@@ -1,0 +1,100 @@
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    height: 100vh;
+    width:240px;
+    background-color:#1e1e2f;
+    color:orange;
+    display:flex;
+    flex-direction:column;
+    transition: width 0.3s ease;
+    overflow:hidden;
+    box-shadow: 2px 0 10px orange;
+}
+
+.sidebar.collapsed{
+    width:70px;
+}
+
+.sidebar-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 16px;
+    background-color: #252538;
+    border-bottom:1px solid #333;
+}
+
+.logo{
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: orange;
+}
+
+.toggle-btn{
+    background: none;
+    border: none;
+    color: orange;
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.sidebar-menu{
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    flex-grow: 1;
+}
+.sidebar-menu li{
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.sidebar-menu li a{
+    color: orange;
+    text-decoration: none;
+}
+.sidebar-menu li a:hover{
+  color:#ffae45
+}
+
+.sidebar-menu li:hover{
+    background-color: #2a2a40;
+}
+
+.sidebar-menu li svg{
+    font-size: 1.2rem;
+    margin-right: 15px;
+    min-width:20px
+}
+
+.sidebar.collapsed li span {
+  display: none;
+}
+
+.sidebar.collapsed .logo {
+  font-size: 1.5rem;
+}
+
+/* Logout Section */
+.logout {
+  margin-top: auto;
+  background-color: none;
+  border-top: 1px solid #333;
+}
+
+.logout:hover {
+  background-color: #ff4d4d;
+}
+
+/* Scrollbar (optional) */
+.sidebar-menu::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-menu::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 4px;
+}
