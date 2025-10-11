@@ -9,7 +9,7 @@ import MemberManagement from "./pages/staff/MemberManagement";
 import CheckInSystem from "./pages/staff/CheckInSystem";
 import PaymentTracking from "./pages/staff/PaymentTracking";
 import StaffProfile from "./pages/staff/StaffProfile";
-
+import MembershipPlanManagement from "./pages/admin/MembershipPlanManagement";
 
 function App() {
   return (
@@ -28,6 +28,8 @@ function App() {
         <Route path="/staff/checkinsystem" element={<CheckInSystem/>}/>
         <Route path ="/staff/paymenttracking" element = {<PaymentTracking/>}/>
         <Route path="/staff/membermanagement" element = {<MemberManagement/>}/>
+        <Route path="/admin/membershipplanmanagement" element = {<MembershipPlanManagement/>}/>
+         <Route path="/admin/membermanagement" element = {<MemberManagement/>}/>  
       </Routes>
      
     </Router>

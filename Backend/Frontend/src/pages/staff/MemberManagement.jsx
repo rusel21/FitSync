@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import "../../css/MemberManagement.css";
+import NavAdmin from "../admin/NavAdmin";
 import NavStaff from "./NavStaff";
 
 const MemberManagement = () => {
@@ -15,13 +16,17 @@ const MemberManagement = () => {
     membership_type: "",
     role: "",
   });
+  const [role, setRole] = useState(null); // <-- Track current user role
 
-  // ✅ Dropdown options
+  // Dropdown options
   const genderOptions = ["Male", "Female", "Other"];
   const membershipOptions = ["Daily Plan", "Semi-Monthly Plan", "Monthly Plan"];
 
-  // ✅ Fetch users
   useEffect(() => {
+    // Get role from localStorage or API
+    const storedRole = localStorage.getItem("role") || "staff"; // default for demo
+    setRole(storedRole);
+
     fetchUsers();
   }, []);
 
@@ -34,7 +39,6 @@ const MemberManagement = () => {
     }
   };
 
-  // ✅ Delete user
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
@@ -45,7 +49,6 @@ const MemberManagement = () => {
     }
   };
 
-  // ✅ Open modal for editing
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
@@ -59,7 +62,6 @@ const MemberManagement = () => {
     });
   };
 
-  // ✅ Update user (excluding role)
   const handleUpdate = async () => {
     try {
       const { role, ...dataToUpdate } = formData;
@@ -71,14 +73,18 @@ const MemberManagement = () => {
     }
   };
 
+  const isAdmin = role === "admin";
+
   return (
-    <>
-      <NavStaff />
+    <div className="member-management-layout">
+      {/* Dynamic Navigation */}
+      {isAdmin ? <NavAdmin /> : <NavStaff />}
+
       <div className="member-management">
         <h2>Member Management</h2>
         <p className="subtitle">List of all registered users with their details.</p>
 
-        {/* ✅ User Table */}
+        {/* User Table */}
         <table className="user-table">
           <thead>
             <tr>
@@ -118,15 +124,22 @@ const MemberManagement = () => {
                   <td className="highlight">{user.membership_type || "N/A"}</td>
                   <td>{user.role || "N/A"}</td>
                   <td className="actions">
-                    <button onClick={() => handleEdit(user)} className="btn-edit">
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user.id)}
-                      className="btn-delete"
-                    >
-                      Delete
-                    </button>
+                    {/* Staff can only view */}
+                    {isAdmin ? (
+                      <>
+                        <button onClick={() => handleEdit(user)} className="btn-edit">
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="btn-delete"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    ) : (
+                      <span className="view-only">View Only</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -140,8 +153,8 @@ const MemberManagement = () => {
           </tbody>
         </table>
 
-        {/* ✅ Edit Modal */}
-        {editingUser && (
+        {/* Edit Modal */}
+        {editingUser && isAdmin && (
           <div className="modal">
             <div className="modal-content">
               <h3>Edit User</h3>
@@ -159,7 +172,6 @@ const MemberManagement = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
 
-              {/* 🔽 Gender Dropdown */}
               <select
                 className="select-dropdown"
                 value={formData.gender}
@@ -192,7 +204,6 @@ const MemberManagement = () => {
                 }
               />
 
-              {/* 🔽 Membership Type Dropdown */}
               <select
                 className="select-dropdown"
                 value={formData.membership_type}
@@ -208,7 +219,6 @@ const MemberManagement = () => {
                 ))}
               </select>
 
-              {/* 🔒 Role (read-only) */}
               <input
                 type="text"
                 value={formData.role}
@@ -228,7 +238,7 @@ const MemberManagement = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

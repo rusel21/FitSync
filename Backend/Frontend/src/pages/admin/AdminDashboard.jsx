@@ -1,11 +1,9 @@
-import Navbar from "../../components/navbar"
-import React from "react";
-
-
+import NavAdmin from "./NavAdmin";
 export default function AdminDashboard(){
     return(
         <>
-        AdminDashBoard
+        <NavAdmin/>
+        <h1>AdminDashboard</h1>
         </>
     )
 }

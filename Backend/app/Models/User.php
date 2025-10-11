@@ -9,6 +9,11 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+
+        public function attendanceLogs()
+        {
+            return $this->hasMany(UserAttendanceLog::class, 'user_id');
+        }
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
