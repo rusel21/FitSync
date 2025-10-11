@@ -1,0 +1,89 @@
+/* =========================
+   Sections
+========================= */
+.section {
+  background-color: #1a1a1a;
+  border: 1px solid #2c2c2c;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Section Header Flex Layout */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #2c2c2c;
+  padding-bottom: 0.5rem;
+}
+
+.section-header h3 {
+  color: #f97316;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.section-action {
+  color: #ccc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.section-action:hover {
+  color: #f97316;
+}
+
+/* Tables inside section remain the same */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #2c2c2c;
+}
+
+.table th {
+  color: #f97316;
+  font-weight: 600;
+}
+
+.table tr:hover {
+  background-color: #202020;
+}
+
+.table a {
+  color: #f97316;
+}
+
+.table a:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  background-color: #f97316;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+/* Grid layout for expired/upcoming */
+.grid-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .grid-sections {
+    grid-template-columns: 1fr;
+  }
+}
