@@ -1,89 +1,104 @@
-/* =========================
-   Sections
-========================= */
-.section {
-  background-color: #1a1a1a;
-  border: 1px solid #2c2c2c;
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-}
+/* Main App Styling - Black and Orange Theme */
 
-/* Section Header Flex Layout */
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #2c2c2c;
-  padding-bottom: 0.5rem;
-}
-
-.section-header h3 {
-  color: #f97316;
-  font-size: 1.2rem;
+body {
   margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #0a0a0a; /* deep black background */
+  color: #ffa500; /* orange text */
+  min-height: 100vh;
 }
 
-.section-action {
-  color: #ccc;
-  font-size: 0.9rem;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+}
+
+/* Header */
+header {
+  background-color: #111;
+  padding: 20px;
+  color: #ffa500;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 10px rgba(255, 165, 0, 0.3);
+}
+
+/* Buttons */
+button {
+  background-color: #ffa500;
+  color: #000;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: bold;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #ffb733;
+  transform: scale(1.05);
+}
+
+/* Cards or Boxes */
+.card {
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  color: #ffa500;
+  box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 165, 0, 0.5);
+  background-color: #111;
+  color: #ffa500;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #ffa500;
+  box-shadow: 0 0 6px rgba(255, 165, 0, 0.4);
+}
+
+/* Links */
+a {
+  color: #ffa500;
+  text-decoration: none;
   transition: color 0.3s;
 }
 
-.section-action:hover {
-  color: #f97316;
+a:hover {
+  color: #ffb733;
 }
 
-/* Tables inside section remain the same */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 12px 10px;
-  text-align: left;
-  border-bottom: 1px solid #2c2c2c;
-}
-
-.table th {
-  color: #f97316;
-  font-weight: 600;
-}
-
-.table tr:hover {
-  background-color: #202020;
-}
-
-.table a {
-  color: #f97316;
-}
-
-.table a:hover {
-  text-decoration: underline;
-}
-
-.badge {
-  background-color: #f97316;
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-}
-
-/* Grid layout for expired/upcoming */
-.grid-sections {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-/* Responsive */
-@media (max-width: 1000px) {
-  .grid-sections {
-    grid-template-columns: 1fr;
-  }
+/* Footer */
+footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid rgba(255, 165, 0, 0.3);
+  color: rgba(255, 165, 0, 0.7);
+  margin-top: 40px;
+  font-size: 14px;
 }
