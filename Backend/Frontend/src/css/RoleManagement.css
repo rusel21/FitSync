@@ -1,0 +1,96 @@
+.role-container {
+  background-color: #1a1f2a;
+  color: #e5e5e5;
+  min-height: 100vh;
+  padding: 40px;
+  font-family: "Inter", sans-serif;
+}
+
+/* Header section */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: #fff;
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+.add-role {
+  background-color: #f97316;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease-in;
+}
+
+.add-role:hover {
+  background-color: #ea580c;
+}
+
+/* Table styles */
+.role-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #232836;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.role-table th,
+.role-table td {
+  padding: 18px;
+  text-align: left;
+  border-bottom: 1px solid #2f3643;
+}
+
+.role-table th {
+  color: #9ca3af;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.role-table td {
+  color: #e5e7eb;
+  font-size: 15px;
+}
+
+.bold {
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Permission tags */
+.badge {
+  background-color: #b45309;
+  color: #fff;
+  padding: 5px 12px;
+  margin-right: 8px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+/* Edit button */
+.edit-btn {
+  color: #f97316;
+  background: none;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  color: #fb923c;
+}

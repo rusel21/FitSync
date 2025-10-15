@@ -40,31 +40,31 @@ export default function NavAdmin(){
           </Link>
         </li>
         <li>
-          <Link to="">
+          <Link to="/admin/attendancelogs">
           <FaClock/>
           <span>Attendance</span>
           </Link>
         </li>
         <li>
-          <Link to="">
+          <Link to="/admin/analytics">
           <FaChartBar/>
           <span>Analytics</span>
           </Link>
         </li>
         <li>
-          <Link to="">
+          <Link to="/admin/paymentmanagement">
           <FaMoneyBillWave/>
           <span>Payments</span>
           </Link>
         </li>
         <li>
-          <Link to="">
+          <Link to="/admin/rolemanagement">
           <FaUserShield/>
           <span>Roles&Permissions</span>
           </Link>
         </li>
         <li>
-          <Link to="">
+          <Link to="/admin/systemsettings">
           <FaCog/>
           <span>Settings</span>
           </Link>
