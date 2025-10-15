@@ -1,0 +1,83 @@
+body {
+  background-color: #121826;
+  font-family: "Inter", sans-serif;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+.payment-container {
+  padding: 40px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.report-link {
+  color: orange;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.payment-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 30px;
+  background-color: #1c2433;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.payment-table th,
+.payment-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #2d3748;
+}
+
+.payment-table th {
+  color: #d1d5db;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.payment-table td {
+  color: #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status.paid {
+  background-color: #064e3b;
+  color: #10b981;
+}
+
+.status.pending {
+  background-color: #78350f;
+  color:orange;
+}
+
+.status.failed {
+  background-color: #4c0519;
+  color: #f87171;
+}
+
+tr:hover {
+  background-color: #222b3a;
+  transition: 0.2s;
+}

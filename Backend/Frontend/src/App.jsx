@@ -10,7 +10,11 @@ import CheckInSystem from "./pages/staff/CheckInSystem";
 import PaymentTracking from "./pages/staff/PaymentTracking";
 import StaffProfile from "./pages/staff/StaffProfile";
 import MembershipPlanManagement from "./pages/admin/MembershipPlanManagement";
-
+import AttendanceLogs from "./pages/admin/AttendanceLogs";
+import PaymentManagement from "./pages/admin/PaymentManagement";
+import Analytics from "./pages/admin/Analytics";
+import RoleManagement from "./pages/admin/RoleManagement";
+import SystemSettings from "./pages/admin/SystemSetting";
 function App() {
   return (
     <Router>
@@ -29,7 +33,12 @@ function App() {
         <Route path ="/staff/paymenttracking" element = {<PaymentTracking/>}/>
         <Route path="/staff/membermanagement" element = {<MemberManagement/>}/>
         <Route path="/admin/membershipplanmanagement" element = {<MembershipPlanManagement/>}/>
-         <Route path="/admin/membermanagement" element = {<MemberManagement/>}/>  
+        <Route path="/admin/membermanagement" element = {<MemberManagement/>}/>  
+        <Route path="/admin/attendancelogs" element = {<AttendanceLogs/>}/>
+        <Route path="/admin/paymentmanagement" element = {<PaymentManagement/>}/>
+        <Route path="/admin/analytics" element = {<Analytics/>}/>
+        <Route path="/admin/rolemanagement" element = {<RoleManagement/>}/>
+        <Route path="/admin/systemsettings" element = {<SystemSettings/>}/>
       </Routes>
      
     </Router>

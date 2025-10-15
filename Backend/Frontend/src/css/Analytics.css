@@ -1,0 +1,154 @@
+body {
+  background-color: #121212;
+  font-family: "Inter", sans-serif;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard {
+  padding: 40px;
+}
+
+.title {
+    margin-left: 500px;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.subtitle {
+    margin-left: 0px;
+    margin-top: 100px;
+  color: #b0b0b0;
+  margin-bottom: 30px;
+}
+
+.grid-container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  overflow-x: auto ;
+  padding-bottom: 10px;
+  margin-left: 200px;
+}
+
+.grid-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.grid-container::-webkit-scrollbar-thumb{
+    background: #444;
+    border-radius: 4px;
+}
+
+.card {
+  background-color: #1e1e1e;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex: 0  300px ;
+}
+
+.card h3 {
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.highlight {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.highlight-orange {
+  color: #ff7a00;
+  font-size: 2rem;
+  margin: 8px 0;
+}
+
+.muted {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}
+
+.increase {
+  color: #10b981;
+}
+
+.decrease {
+  color: #ef4444;
+}
+
+/* Line Chart */
+.line-chart {
+  margin-top: 20px;
+}
+
+/* Status Bar */
+.status-bar {
+  display: flex;
+  height: 10px;
+  margin-top: 15px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.active {
+  width: 85%;
+  background-color: #ff7a00;
+}
+.inactive {
+  width: 15%;
+  background-color: #333;
+}
+.legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 10px;
+}
+
+/* Bar Chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 80px;
+  margin-top: 10px;
+}
+.bar {
+  width: 10%;
+  background-color: #a85523;
+  border-radius: 4px;
+}
+.days {
+  display: flex;
+  justify-content: space-between;
+  color: #999;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+/* Progress Bars */
+.progress-container {
+  margin-top: 15px;
+}
+.label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+.progress {
+  width: 100%;
+  background-color: #333;
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.bar.orange {
+  height: 100%;
+  background-color: #ff7a00;
+  border-radius: 4px;
+}
