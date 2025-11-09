@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "../../css/StaffProfile.css";
-import NavStaff from "./NavStaff";
+import StaffLayout from "./StaffLayout";
 
 const StaffProfile = () => {
   const [staff, setStaff] = useState(null);
@@ -111,130 +110,219 @@ const StaffProfile = () => {
     }
   };
 
-  if (loading) return <p className="loading">Loading staff profile...</p>;
-  if (!staff) return <p className="error">No staff data found.</p>;
+  if (loading) {
+    return (
+      <StaffLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-300 text-lg">Loading staff profile...</p>
+          </div>
+        </div>
+      </StaffLayout>
+    );
+  }
+
+  if (!staff) {
+    return (
+      <StaffLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-red-400 text-lg">No staff data found.</p>
+        </div>
+      </StaffLayout>
+    );
+  }
 
   return (
-    <>
-      <NavStaff />
-      <div className="staff-profile">
-        {/* Profile Header */}
-        <div className="profile-header">
-          <div className="avatar-section">
-            <div className="avatar">
-              {preview ? (
-                <img src={preview} alt="Preview" className="avatar-preview" />
-              ) : staff.picture ? (
-                <img
-                    src={`http://127.0.0.1:8000/staff/image/${staff.picture}`}
-                    alt={staff.name}
-                    className="avatar-preview"
-                  />
+    <StaffLayout>
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Staff Profile</h1>
+          <p className="text-gray-300">Manage your staff account and preferences</p>
+        </div>
 
-              ) : (
-                staff.name?.charAt(0) || "?"
-              )}
+        {/* Profile Card */}
+        <div className="bg-gray-800 rounded-xl border border-red-600/50 shadow-lg mb-6">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white">Profile Information</h2>
+          </div>
+
+          <div className="p-6">
+            {/* Profile Header */}
+            <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-gray-700 border-2 border-red-500 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+                  {preview ? (
+                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : staff.picture ? (
+                    <img
+                      src={`http://127.0.0.1:8000/staff/image/${staff.picture}`}
+                      alt={staff.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    staff.name?.charAt(0) || "?"
+                  )}
+                </div>
+                {editing && (
+                  <label className="absolute bottom-0 right-0 bg-red-600 hover:bg-red-500 text-white p-1 rounded-full cursor-pointer transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="text-center md:text-left">
+                <h1 className="text-2xl font-bold text-white">{staff.name}</h1>
+                <p className="text-red-400 font-medium">{staff.role}</p>
+                <p className="text-gray-400 text-sm mt-1">Employee ID: {staff.staff_id}</p>
+              </div>
             </div>
-            <div className="staff-info">
-              <h1>{staff.name}</h1>
-              <p>{staff.role}</p>
+
+            {/* Profile Info */}
+            <div className="space-y-4">
+              {editing ? (
+                <>
+                  {selectedFile && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                      <p className="text-red-400 text-sm mb-2">New picture selected. Click "Upload Picture" to save.</p>
+                      <button
+                        onClick={handleUploadPicture}
+                        className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                      >
+                        Upload Picture
+                      </button>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name || ""}
+                        onChange={handleChange}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Phone</label>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={formData.phone || ""}
+                        onChange={handleChange}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address || ""}
+                        onChange={handleChange}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex space-x-3 pt-4">
+                    <button 
+                      onClick={handleSaveInfo}
+                      className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 border border-red-500"
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={() => setEditing(false)}
+                      className="border border-gray-600 text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                    <label className="text-sm text-gray-400">Employee ID</label>
+                    <p className="text-white font-medium">{staff.staff_id}</p>
+                  </div>
+                  <div className="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                    <label className="text-sm text-gray-400">Email</label>
+                    <p className="text-white font-medium">{staff.email}</p>
+                  </div>
+                  <div className="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                    <label className="text-sm text-gray-400">Phone</label>
+                    <p className="text-white font-medium">{staff.phone || "Not provided"}</p>
+                  </div>
+                  <div className="bg-gray-750 rounded-lg p-4 border border-gray-600 md:col-span-2">
+                    <label className="text-sm text-gray-400">Address</label>
+                    <p className="text-white font-medium">{staff.address || "No address yet"}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Profile Info */}
-        <div className="profile-info">
-          {editing ? (
-            <>
-              <div className="info-item">
-                <span>Profile Picture:</span>
-                <input type="file" accept="image/*" onChange={handleFileChange} />
-                {selectedFile && (
-                  <button
-                    className="secondary"
-                    onClick={handleUploadPicture}
-                  >
-                    Upload Picture
-                  </button>
-                )}
-              </div>
-              <div className="info-item">
-                <span>Name:</span>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name || ""}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="info-item">
-                <span>Phone:</span>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone || ""}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="info-item">
-                <span>Address:</span>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address || ""}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="edit-buttons">
-                <button className="primary" onClick={handleSaveInfo}>
-                  Save Info
-                </button>
-                <button
-                  className="secondary"
-                  onClick={() => setEditing(false)}
+        {/* Actions Card */}
+        <div className="bg-gray-800 rounded-xl border border-red-600/50 shadow-lg">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white">Account Actions</h2>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {!editing ? (
+                <button 
+                  onClick={() => setEditing(true)}
+                  className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 border border-red-500 flex items-center justify-center gap-2"
                 >
-                  Cancel
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Profile
                 </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="info-item">
-                <span>Employee ID:</span>
-                <p>{staff.staff_id}</p>
-              </div>
-              <div className="info-item">
-                <span>Email:</span>
-                <p>{staff.email}</p>
-              </div>
-              <div className="info-item">
-                <span>Phone:</span>
-                <p>{staff.phone || "Not provided"}</p>
-              </div>
-              <div className="info-item">
-                <span>Address:</span>
-                <p>{staff.address || "No address yet"}</p>
-              </div>
-            </>
-          )}
+              ) : null}
+              <button 
+                onClick={handleChangePassword}
+                className="border border-gray-600 text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                Change Password
+              </button>
+              <button 
+                onClick={handleDeactivate}
+                className="border border-red-600 text-red-400 px-6 py-3 rounded-lg hover:bg-red-600 hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Deactivate Account
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="profile-actions">
-          <button className="primary" onClick={() => setEditing(true)}>
-            Edit Profile
-          </button>
-          <button className="secondary" onClick={handleChangePassword}>
-            Change Password
-          </button>
-          <button className="secondary" onClick={handleDeactivate}>
-            Deactivate Account
-          </button>
-        </div>
-
-        {message && <p className="status-message">{message}</p>}
+        {/* Message */}
+        {message && (
+          <div className={`mt-4 p-4 rounded-lg border ${
+            message.includes("success") ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-red-500/10 border-red-500/30 text-red-400"
+          }`}>
+            {message}
+          </div>
+        )}
       </div>
-    </>
+    </StaffLayout>
   );
 };
 

@@ -15,10 +15,15 @@ import PaymentManagement from "./pages/admin/PaymentManagement";
 import Analytics from "./pages/admin/Analytics";
 import RoleManagement from "./pages/admin/RoleManagement";
 import SystemSettings from "./pages/admin/SystemSetting";
+import AdminMemberManagement from "./pages/admin/AdminMemberManagement";
+import StaffManagement from "./pages/admin/StaffManagement";
+import StaffCommunications from "./pages/staff/StaffCommunications";
+import StaffReports from "./pages/staff/StaffReports";
+import StaffScheduling from "./pages/staff/StaffScheduling";
 function App() {
   return (
     <Router>
-      <Routes>
+      <Routes>  
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -39,6 +44,12 @@ function App() {
         <Route path="/admin/analytics" element = {<Analytics/>}/>
         <Route path="/admin/rolemanagement" element = {<RoleManagement/>}/>
         <Route path="/admin/systemsettings" element = {<SystemSettings/>}/>
+        <Route path="/admin/adminmembermanagement" element = {<AdminMemberManagement/>}/>
+        <Route path="/admin/staffmanagement" element = {<StaffManagement/>}/>
+        <Route path="/staff/communications" element = {<StaffCommunications/>}/>
+        <Route path="/staff/reports" element = {<StaffReports/>}/>
+        <Route path="/staff/scheduling" element = {<StaffScheduling/>}/>
+
       </Routes>
      
     </Router>
