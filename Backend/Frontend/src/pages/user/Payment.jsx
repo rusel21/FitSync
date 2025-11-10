@@ -1,11 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UserLayout from "./UserLayout";
+import api from "../../utils/axiosConfig";
 
 export default function Payment() {
   const [paymentMethod, setPaymentMethod] = useState("gcash");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [step, setStep] = useState(1); // 1: Select method, 2: GCash details, 3: Processing
+  const [step, setStep] = useState(1);
+  const [currentPayment, setCurrentPayment] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [membershipType, setMembershipType] = useState("Premium");
+
+  useEffect(() => {
+    fetchPaymentMethods();
+  }, []);
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const response = await api.get('/payment/methods');
+      setPaymentMethods(response.data.payment_methods);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,31 +32,74 @@ export default function Payment() {
       return;
     }
 
-    if (phoneNumber.length !== 11 || !phoneNumber.startsWith('09')) {
-      alert("Please enter a valid 11-digit mobile number (09XXXXXXXXX)");
-      return;
-    }
-
     setStep(3);
     setProcessing(true);
-    
-    // Simulate payment processing
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Simulate successful payment
-      alert(`Payment successful! $99.00 has been charged to your GCash account (${phoneNumber}).`);
-      
-      // Reset form
-      setPhoneNumber("");
-      setStep(1);
+      // Create GCash payment
+      const response = await api.post('/payment/gcash', {
+        phone_number: phoneNumber,
+        membership_type: membershipType
+      });
+
+      if (response.data.success) {
+        setCurrentPayment(response.data.payment);
+        
+        // Poll for payment status
+        await pollPaymentStatus(response.data.payment.id);
+      } else {
+        throw new Error(response.data.message);
+      }
       
     } catch (error) {
-      alert("Payment failed. Please try again.");
+      console.error('Payment error:', error);
+      alert(error.response?.data?.message || "Payment failed. Please try again.");
       setStep(2);
     } finally {
       setProcessing(false);
     }
+  };
+
+  const pollPaymentStatus = async (paymentId) => {
+    const maxAttempts = 30; // 3 minutes maximum
+    let attempts = 0;
+
+    const checkStatus = async () => {
+      try {
+        const response = await api.get(`/payment/${paymentId}/status`);
+        const { status, membership_activated } = response.data;
+
+        if (status === 'completed') {
+          alert(`Payment successful! Your ${membershipType} membership has been activated.`);
+          setPhoneNumber("");
+          setStep(1);
+          setCurrentPayment(null);
+          return true;
+        } else if (status === 'failed') {
+          alert("Payment failed. Please try again.");
+          setStep(2);
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        console.error('Status check error:', error);
+        return false;
+      }
+    };
+
+    const interval = setInterval(async () => {
+      attempts++;
+      const completed = await checkStatus();
+
+      if (completed || attempts >= maxAttempts) {
+        clearInterval(interval);
+        if (attempts >= maxAttempts) {
+          alert("Payment timeout. Please check your GCash app and try again.");
+          setStep(2);
+        }
+      }
+    }, 6000); // Check every 6 seconds
   };
 
   const handlePhoneNumberChange = (e) => {
@@ -52,6 +112,26 @@ export default function Payment() {
     if (number.length <= 7) return `${number.slice(0, 4)} ${number.slice(4)}`;
     return `${number.slice(0, 4)} ${number.slice(4, 7)} ${number.slice(7)}`;
   };
+
+  const getMembershipPrice = (type) => {
+    const prices = {
+      'Premium': 99.00,
+      'Yearly': 79.00,
+      'Quarterly': 89.00,
+      'Monthly': 99.00,
+      'Semi-Monthly Plan': 45.00,
+      'Daily Plan': 10.00
+    };
+    return prices[type] || 99.00;
+  };
+
+  const convertToPHP = (usdAmount) => {
+    const exchangeRate = 56.50;
+    return (usdAmount * exchangeRate).toFixed(2);
+  };
+
+  const usdPrice = getMembershipPrice(membershipType);
+  const phpAmount = convertToPHP(usdPrice);
 
   return (
     <UserLayout>
@@ -75,11 +155,11 @@ export default function Payment() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-300">Membership:</span>
-                  <span className="text-white font-medium">Premium Monthly</span>
+                  <span className="text-white font-medium">{membershipType}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-300">Amount:</span>
-                  <span className="text-white font-medium">$99.00</span>
+                  <span className="text-gray-300">Amount (USD):</span>
+                  <span className="text-white font-medium">${usdPrice}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300">Renewal:</span>
@@ -88,11 +168,30 @@ export default function Payment() {
                 <div className="border-t border-gray-600 pt-2 mt-2">
                   <div className="flex justify-between text-lg">
                     <span className="text-gray-300">Total:</span>
-                    <span className="text-red-400 font-bold">₱5,500.00</span>
+                    <span className="text-red-400 font-bold">₱{phpAmount}</span>
                   </div>
                   <p className="text-xs text-gray-400 text-right mt-1">*Converted to Philippine Peso</p>
                 </div>
               </div>
+            </div>
+
+            {/* Membership Type Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Membership Type
+              </label>
+              <select
+                value={membershipType}
+                onChange={(e) => setMembershipType(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+              >
+                <option value="Premium">Premium - $99/month</option>
+                <option value="Yearly">Yearly - $79/month</option>
+                <option value="Quarterly">Quarterly - $89/month</option>
+                <option value="Monthly">Monthly - $99/month</option>
+                <option value="Semi-Monthly Plan">Semi-Monthly - $45/15 days</option>
+                <option value="Daily Plan">Daily - $10/day</option>
+              </select>
             </div>
 
             {/* Step 1: Payment Method Selection */}
@@ -101,44 +200,44 @@ export default function Payment() {
                 <h4 className="text-lg font-semibold text-white mb-4">Select Payment Method</h4>
                 
                 <div className="space-y-4">
-                  {/* GCash Option */}
-                  <label className="block">
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="gcash"
-                      checked={paymentMethod === "gcash"}
-                      onChange={(e) => {
-                        setPaymentMethod(e.target.value);
-                        setStep(2);
-                      }}
-                      className="sr-only"
-                    />
-                    <div className="bg-gray-750 border-2 border-green-500 rounded-lg p-4 cursor-pointer hover:bg-gray-700 transition-colors">
-                      <div className="flex items-center justify-center space-x-3">
-                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-lg">G</span>
+                  {paymentMethods.map((method) => (
+                    <label key={method.id} className="block">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.id}
+                        checked={paymentMethod === method.id}
+                        onChange={(e) => {
+                          setPaymentMethod(e.target.value);
+                          if (method.available) {
+                            setStep(2);
+                          }
+                        }}
+                        className="sr-only"
+                        disabled={!method.available}
+                      />
+                      <div className={`bg-gray-750 border-2 rounded-lg p-4 transition-colors ${
+                        method.available 
+                          ? paymentMethod === method.id 
+                            ? 'border-green-500 cursor-pointer' 
+                            : 'border-gray-600 cursor-pointer hover:bg-gray-700'
+                          : 'border-gray-600 opacity-50 cursor-not-allowed'
+                      }`}>
+                        <div className="flex items-center justify-center space-x-3">
+                          <div className={`w-12 h-12 bg-${method.color}-500 rounded-full flex items-center justify-center`}>
+                            <span className="text-white font-bold text-lg">{method.icon}</span>
+                          </div>
+                          <div className="text-left">
+                            <h5 className="text-white font-semibold">{method.name}</h5>
+                            <p className="text-gray-300 text-sm">{method.description}</p>
+                            {!method.available && (
+                              <p className="text-yellow-400 text-xs mt-1">Coming soon</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-left">
-                          <h5 className="text-white font-semibold">GCash</h5>
-                          <p className="text-gray-300 text-sm">Pay using your GCash wallet</p>
-                        </div>
                       </div>
-                    </div>
-                  </label>
-
-                  {/* Other e-wallets placeholder */}
-                  <div className="bg-gray-750 border-2 border-gray-600 rounded-lg p-4 opacity-50 cursor-not-allowed">
-                    <div className="flex items-center justify-center space-x-3">
-                      <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">E</span>
-                      </div>
-                      <div className="text-left">
-                        <h5 className="text-white font-semibold">Other e-Wallets</h5>
-                        <p className="text-gray-300 text-sm">Coming soon</p>
-                      </div>
-                    </div>
-                  </div>
+                    </label>
+                  ))}
                 </div>
               </div>
             )}
@@ -204,7 +303,7 @@ export default function Payment() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    Pay with GCash
+                    Pay ₱{phpAmount}
                   </button>
                 </div>
               </form>
@@ -220,11 +319,16 @@ export default function Payment() {
                     <p className="text-gray-300">
                       Please check your GCash app to confirm the payment...
                     </p>
-                    <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                      <p className="text-green-300 text-sm">
-                        A payment request has been sent to {formatPhoneNumber(phoneNumber)}
-                      </p>
-                    </div>
+                    {currentPayment && (
+                      <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                        <p className="text-green-300 text-sm">
+                          A payment request for ₱{phpAmount} has been sent to {formatPhoneNumber(phoneNumber)}
+                        </p>
+                        <p className="text-green-300 text-xs mt-1">
+                          Reference: {currentPayment.reference_number}
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
@@ -235,7 +339,7 @@ export default function Payment() {
                     </div>
                     <h4 className="text-lg font-semibold text-white mb-2">Payment Successful!</h4>
                     <p className="text-gray-300 mb-4">
-                      Your membership has been activated successfully.
+                      Your {membershipType} membership has been activated successfully.
                     </p>
                     <button
                       onClick={() => setStep(1)}

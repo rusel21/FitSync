@@ -1,4 +1,4 @@
-import AdminLayout from "./AdminLayout";
+
 
 const AdminDashboard = () => {
   const stats = [
@@ -70,7 +70,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <AdminLayout>
+    //<AdminLayout>
       <div className="w-full">
         {/* Header */}
         <div className="mb-8">
@@ -255,7 +255,7 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
-    </AdminLayout>
+    //</AdminLayout>
   );
 };
 

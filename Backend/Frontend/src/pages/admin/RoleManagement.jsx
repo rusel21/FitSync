@@ -114,7 +114,7 @@ const RoleManagement = () => {
   ];
 
   return (
-    <AdminLayout>
+   // <AdminLayout>
       <div className="w-full">
         {/* Header */}
         <div className="mb-8">
@@ -374,7 +374,7 @@ const RoleManagement = () => {
           </div>
         )}
       </div>
-    </AdminLayout>
+   // </AdminLayout>
   );
 };
 

@@ -99,7 +99,7 @@ export default function StaffManagement() {
   };
 
   return (
-    <AdminLayout>
+   // <AdminLayout>
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
@@ -490,6 +490,6 @@ export default function StaffManagement() {
         </div>
       )}
     </div>
-    </AdminLayout>
+   // </AdminLayout>
   );
 }

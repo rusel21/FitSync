@@ -3,43 +3,71 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Staff extends Model
+class Staff extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    protected $table = 'staffs';
-    protected $primaryKey = 'staff_id'; // <-- change this to your actual PK column
-    public $incrementing = false;       // because it's not auto-increment
-    protected $keyType = 'string';      // because Staff-0001 is a string
+    // Explicitly set the table name
+    protected $table = 'staffs'; // Change this to whatever your actual table name is
 
-    // Default primary key is "id" (auto-increment), so no need to override
+    // Use default integer primary key (recommended)
+    protected $primaryKey = 'id';
+     public $incrementing = true;
+    protected $keyType = 'int';
+
     protected $fillable = [
-        'staff_id', 'name', 'email', 'password', 'role', 'phone', 'address','picture'
+        'staff_id', // This is your unique identifier, not primary key
+        'name',
+        'email',
+        'password',
+        'role',
+        'phone',
+        'address',
+        'picture'
     ];
 
-    // Auto-generate staff_id like STF0001 when creating
-   protected static function boot()
-{
-    parent::boot();
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    static::creating(function ($staff) {
-        if (!$staff->staff_id) {
-            // Get the last staff ordered by numeric part of staff_id
-            $lastStaff = self::orderByRaw("CAST(SUBSTRING(staff_id, 6) AS UNSIGNED) DESC")->first();
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
 
-            $nextId = 1;
-            if ($lastStaff) {
-                // Extract numeric part (e.g. from Staff-0001 → 1)
-                $lastNumber = (int) substr($lastStaff->staff_id, 6);
-                $nextId = $lastNumber + 1;
-            }
-
-            // Generate new staff_id
-            $staff->staff_id = 'Staff-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+    /**
+     * Get the picture URL attribute
+     */
+    public function getPictureUrlAttribute()
+    {
+        if ($this->picture) {
+            return asset('storage/' . $this->picture);
         }
-    });
-}
+        
+        return asset('images/default-staff.png');
+    }
 
+    /**
+     * Generate staff ID automatically
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($staff) {
+            if (empty($staff->staff_id)) {
+                $prefix = $staff->role === 'Admin' ? 'ADMIN' : 'STAFF';
+                $latestStaff = static::where('staff_id', 'like', $prefix . '-%')
+                    ->orderBy('staff_id', 'desc')
+                    ->first();
+                
+                $number = $latestStaff ? (int) str_replace($prefix . '-', '', $latestStaff->staff_id) + 1 : 1;
+                $staff->staff_id = $prefix . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+            }
+        });
+    }
 }

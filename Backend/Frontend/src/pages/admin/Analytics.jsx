@@ -1,8 +1,8 @@
-import AdminLayout from "./AdminLayout";
+//import AdminLayout from "./AdminLayout";
 
 const Analytics = () => {
   return (
-    <AdminLayout>
+   // <AdminLayout>
       <div className="w-full">
         {/* Header */}
         <div className="mb-8">
@@ -268,7 +268,7 @@ const Analytics = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    //</AdminLayout>
   );
 };
 

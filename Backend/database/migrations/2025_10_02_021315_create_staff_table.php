@@ -9,13 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staffs', function (Blueprint $table) {
-            $table->string('staff_id')->primary(); // e.g., Staff-0001
-            $table->string('name', 100);
-            $table->string('email', 150)->unique();
+            $table->id(); // This creates auto-incrementing 'id' primary key
+            $table->string('staff_id')->unique(); // Keep this as unique identifier
+            $table->string('name');
+            $table->string('email')->unique();
             $table->string('password');
-            $table->string('role')->default('Staff'); // always Staff
-            $table->string('phone', 20)->nullable();
-            $table->string('address', 255)->nullable();
+            $table->enum('role', ['Staff', 'Admin'])->default('Staff');
+            $table->string('phone')->nullable();
+            $table->text('address')->nullable();
+            $table->string('picture')->nullable();
+            $table->rememberToken();
             $table->timestamps();
         });
     }

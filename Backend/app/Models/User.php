@@ -76,4 +76,30 @@ class User extends Authenticatable
             }
         });
     }
+
+
+            public function memberships()
+        {
+            return $this->hasMany(Membership::class);
+        }
+
+        public function currentMembership()
+        {
+            return $this->hasOne(Membership::class)
+                ->where('status', 'active')
+                ->where('end_date', '>=', now())
+                ->latest();
+        }
+
+
+                // Add this relationship to your existing User model
+        public function payments()
+        {
+            return $this->hasMany(Payment::class);
+        }
+
+        public function latestPayment()
+        {
+            return $this->hasOne(Payment::class)->latest();
+        }
 }

@@ -101,7 +101,7 @@ export default function MembershipPlanManagement() {
   ];
 
   return (
-    <AdminLayout>
+   // <AdminLayout>
       <div className="w-full">
         {/* Header */}
         <div className="mb-8">
@@ -334,6 +334,6 @@ export default function MembershipPlanManagement() {
           </div>
         )}
       </div>
-    </AdminLayout>
+   // </AdminLayout>
   );
 }

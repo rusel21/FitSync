@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\UserAttendanceLog;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -93,5 +96,115 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'Member deleted successfully']);
+    }
+
+    // ✅ NEW: Get current authenticated user profile
+    public function getCurrentUser(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    // ✅ NEW: Update current user profile
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'contact' => 'sometimes|string|max:15',
+            'gender' => 'sometimes|string|in:male,female',
+            'address' => 'sometimes|string|max:255',
+            'picture' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        // Handle picture upload
+        if ($request->hasFile('picture')) {
+            // Delete old picture if exists
+            if ($user->picture) {
+                Storage::delete('public/' . $user->picture);
+            }
+            
+            $picturePath = $request->file('picture')->store('pictures', 'public');
+            $user->picture = $picturePath;
+        }
+
+        // Update other fields
+        $user->update($request->only(['name', 'contact', 'gender', 'address']));
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
+    }
+
+    // ✅ NEW: Get dashboard data for current user
+    public function getDashboardData(Request $request)
+    {
+        $user = $request->user();
+        
+        // Get attendance stats for current month
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+        
+        $attendanceCount = $user->attendanceLogs()
+            ->whereMonth('check_in', $currentMonth)
+            ->whereYear('check_in', $currentYear)
+            ->count();
+
+        // Get recent check-ins (last 5)
+        $recentCheckins = $user->attendanceLogs()
+            ->orderBy('check_in', 'desc')
+            ->limit(5)
+            ->get(['check_in', 'check_out']);
+
+        // Calculate attendance rate (you can customize this logic)
+        $totalPossibleDays = Carbon::now()->daysInMonth;
+        $attendanceRate = $totalPossibleDays > 0 ? round(($attendanceCount / $totalPossibleDays) * 100) : 0;
+
+        return response()->json([
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'membership_type' => $user->membership_type,
+                'user_id' => $user->user_id,
+            ],
+            'attendance_count' => $attendanceCount,
+            'recent_checkins' => $recentCheckins,
+            'stats' => [
+                'checkins_this_month' => $attendanceCount,
+                'workouts_completed' => $attendanceCount, // Using attendance as workout count for now
+                'attendance_rate' => $attendanceRate,
+            ],
+            'membership_status' => [
+                'type' => $user->membership_type,
+                'status' => 'active', // You can add expiration logic later
+                'user_id' => $user->user_id
+            ]
+        ]);
+    }
+
+    // ✅ NEW: Upload profile picture only
+    public function uploadProfilePicture(Request $request)
+    {
+        $user = $request->user();
+        
+        $request->validate([
+            'picture' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        // Delete old picture if exists
+        if ($user->picture) {
+            Storage::delete('public/' . $user->picture);
+        }
+        
+        $picturePath = $request->file('picture')->store('pictures', 'public');
+        $user->picture = $picturePath;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile picture updated successfully',
+            'picture_url' => Storage::url($picturePath),
+            'user' => $user
+        ]);
     }
 }

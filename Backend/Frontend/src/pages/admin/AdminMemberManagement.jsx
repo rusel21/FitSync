@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import AdminLayout from './AdminLayout';
+//import AdminLayout from './AdminLayout';
 
 export default function AdminMemberManagement() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -95,7 +95,7 @@ export default function AdminMemberManagement() {
   };
 
   return (
-    <AdminLayout>
+   // <AdminLayout>
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
@@ -467,6 +467,6 @@ export default function AdminMemberManagement() {
       </div>
     </div>
 
-    </AdminLayout>
+    //</AdminLayout>
   );
 }

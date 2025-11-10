@@ -19,13 +19,10 @@ const SystemSettings = () => {
     contactPhone: "+63 912 345 6789",
     businessHours: "5:00 AM - 10:00 PM",
     
-    // Payment Gateways
-    stripeSecretKey: "sk_live_************",
-    stripePublicKey: "pk_live_************",
-    paypalClientId: "**************",
-    paypalSecret: "**************",
+    // Payment Gateways - Only GCash
     gcashApiKey: "gc_************",
-    paymayaSecretKey: "sk_************",
+    gcashSecretKey: "gc_secret_************",
+    gcashMerchantId: "MERCHANT12345",
     
     // Security
     currentPassword: "",
@@ -42,7 +39,8 @@ const SystemSettings = () => {
   });
 
   const [activeTab, setActiveTab] = useState("general");
-  const [logoPreview, setLogoPreview] = useState("https://via.placeholder.com/60");
+  // Fixed: Using SVG data URL instead of external placeholder
+  const [logoPreview, setLogoPreview] = useState("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='10' fill='%239CA3AF'%3ELOGO%3C/text%3E%3C/svg%3E");
   const [saving, setSaving] = useState(false);
 
   const handleInputChange = (field, value) => {
@@ -108,7 +106,7 @@ const SystemSettings = () => {
   ];
 
   return (
-    <AdminLayout>
+    //<AdminLayout>
       <div className="w-full max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -224,45 +222,20 @@ const SystemSettings = () => {
             {/* Payment Gateways */}
             {activeTab === "payment" && (
               <div className="space-y-6">
-                <h2 className="text-xl font-bold text-white mb-4">Payment Gateways</h2>
+                <h2 className="text-xl font-bold text-white mb-4">GCash Payment Gateway</h2>
+                
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+                  <h3 className="text-blue-400 font-semibold mb-2">GCash Integration Status</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-300">GCash: Connected and Active</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-2">
+                    All payments are processed through GCash. Make sure your API credentials are up to date.
+                  </p>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Stripe Secret Key</label>
-                    <input
-                      type="password"
-                      value={settings.stripeSecretKey}
-                      onChange={(e) => handleInputChange("stripeSecretKey", e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Stripe Public Key</label>
-                    <input
-                      type="password"
-                      value={settings.stripePublicKey}
-                      onChange={(e) => handleInputChange("stripePublicKey", e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">PayPal Client ID</label>
-                    <input
-                      type="password"
-                      value={settings.paypalClientId}
-                      onChange={(e) => handleInputChange("paypalClientId", e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">PayPal Secret</label>
-                    <input
-                      type="password"
-                      value={settings.paypalSecret}
-                      onChange={(e) => handleInputChange("paypalSecret", e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">GCash API Key</label>
                     <input
@@ -270,34 +243,50 @@ const SystemSettings = () => {
                       value={settings.gcashApiKey}
                       onChange={(e) => handleInputChange("gcashApiKey", e.target.value)}
                       className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                      placeholder="Enter your GCash API Key"
                     />
+                    <p className="text-gray-400 text-xs mt-1">Found in your GCash Business Dashboard</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">PayMaya Secret Key</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">GCash Secret Key</label>
                     <input
                       type="password"
-                      value={settings.paymayaSecretKey}
-                      onChange={(e) => handleInputChange("paymayaSecretKey", e.target.value)}
+                      value={settings.gcashSecretKey}
+                      onChange={(e) => handleInputChange("gcashSecretKey", e.target.value)}
                       className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                      placeholder="Enter your GCash Secret Key"
                     />
+                    <p className="text-gray-400 text-xs mt-1">Keep this key secure and confidential</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">GCash Merchant ID</label>
+                    <input
+                      type="text"
+                      value={settings.gcashMerchantId}
+                      onChange={(e) => handleInputChange("gcashMerchantId", e.target.value)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                      placeholder="Enter your Merchant ID"
+                    />
+                    <p className="text-gray-400 text-xs mt-1">Your unique GCash merchant identifier</p>
+                  </div>
+                  <div className="flex items-end">
+                    <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg transition-colors duration-200 border border-blue-500 flex items-center space-x-2">
+                      <FaCreditCard className="w-4 h-4" />
+                      <span>Test Connection</span>
+                    </button>
                   </div>
                 </div>
 
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                  <h3 className="text-blue-400 font-semibold mb-2">Payment Gateway Status</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-gray-300">Stripe: Connected</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-gray-300">GCash: Connected</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                      <span className="text-gray-300">PayPal: Needs Setup</span>
-                    </div>
+                <div className="border-t border-gray-700 pt-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">GCash Webhook Settings</h3>
+                  <div className="bg-gray-750 rounded-lg p-4">
+                    <p className="text-gray-300 text-sm mb-2">Webhook URL for payment notifications:</p>
+                    <code className="bg-gray-900 text-green-400 px-3 py-2 rounded text-sm block">
+                      https://api.fitsync.com/webhook/gcash/payments
+                    </code>
+                    <p className="text-gray-400 text-xs mt-2">
+                      Configure this URL in your GCash Business Dashboard to receive real-time payment updates.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -459,7 +448,7 @@ const SystemSettings = () => {
           </div>
         </div>
       </div>
-    </AdminLayout>
+   // </AdminLayout>
   );
 };
 

@@ -1,37 +1,55 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import api from "../utils/axiosConfig";
+import { setToken, setRole } from "../utils/auth";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/login", {
+      const res = await api.post("/login", {
         email,
         password,
       });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.user.role);
+      // Use helper functions to set token and role
+      setToken(res.data.token);
+      setRole(res.data.user.role);
 
       setMessage("✅ Login successful!");
 
-      if (res.data.user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (res.data.user.role === "staff") {
-        navigate("/staff/dashboard");
-      } else {
-        navigate("/userdashboard");
-      }
+      // Small delay to show success message
+      setTimeout(() => {
+        if (res.data.user.role === "admin") {
+          navigate("/admin/dashboard");
+        } else if (res.data.user.role === "staff") {
+          navigate("/staff/dashboard");
+        } else {
+          navigate("/userdashboard");
+        }
+      }, 1000);
 
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
-      setMessage("❌ Invalid email or password");
+      console.error("Login error:", error);
+      
+      if (error.response?.data?.message) {
+        setMessage(`❌ ${error.response.data.message}`);
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        setMessage("❌ Network error. Please check your connection.");
+      } else {
+        setMessage("❌ Invalid email or password");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,7 +85,8 @@ function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200"
+                  disabled={loading}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -82,16 +101,25 @@ function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200"
+                  disabled={loading}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
 
               {/* Login Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2 sm:py-3 px-4 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transform hover:-translate-y-0.5 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-red-500/25 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-950"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2 sm:py-3 px-4 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transform hover:-translate-y-0.5 transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-red-500/25 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Sign In
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Signing In...</span>
+                  </div>
+                ) : (
+                  "Sign In"
+                )}
               </button>
             </form>
 
@@ -127,7 +155,7 @@ function LoginPage() {
           {/* Background Image */}
           <div className="absolute inset-0">
             <img 
-              src="/public/Fitsync-Login.jpg" 
+              src="/Fitsync-Login.jpg" 
               alt="Fitness motivation"
               className="w-full h-full object-cover"
             />

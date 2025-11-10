@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import StaffLayout from "./StaffLayout";
+import { useAuth } from "../../context/AuthContext";
 
 const StaffProfile = () => {
+  const { staff: authStaff, token } = useAuth();
   const [staff, setStaff] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -11,26 +13,30 @@ const StaffProfile = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  const staffId = "Staff-0001"; // Replace with authenticated staff ID
-
-  // Fetch staff data
+  // Fetch staff data using authenticated profile endpoint
   useEffect(() => {
     const fetchStaff = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await axios.get(
-          `http://localhost:8000/api/staff/${staffId}`
-        );
-        setStaff(response.data);
-        setFormData(response.data);
+        const response = await axios.get("http://localhost:8000/api/staff/profile");
+        setStaff(response.data.staff);
+        setFormData(response.data.staff);
       } catch (error) {
         console.error("Error fetching staff:", error);
+        if (error.response?.status === 401) {
+          setMessage("Please log in again");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchStaff();
-  }, [staffId]);
+  }, [token]);
 
   // Handle form input change
   const handleChange = (e) => {
@@ -55,7 +61,7 @@ const StaffProfile = () => {
       data.append("picture", selectedFile);
 
       const response = await axios.post(
-        `http://localhost:8000/api/staff/upload-picture/${staffId}`,
+        "http://localhost:8000/api/staff/upload-picture",
         data,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -78,10 +84,10 @@ const StaffProfile = () => {
   const handleSaveInfo = async () => {
     try {
       const response = await axios.put(
-        `http://localhost:8000/api/staff/${staffId}`,
+        "http://localhost:8000/api/staff/profile",
         formData
       );
-      setStaff(response.data);
+      setStaff(response.data.staff);
       setMessage("Profile updated successfully!");
       setEditing(false);
     } catch (error) {
@@ -90,25 +96,41 @@ const StaffProfile = () => {
     }
   };
 
-  // Change password redirect
-  const handleChangePassword = () => {
-    window.location.href = "/change-password";
-  };
+  // Change password
+  const handleChangePassword = async () => {
+    const newPassword = prompt("Enter new password:");
+    const confirmPassword = prompt("Confirm new password:");
 
-  // Deactivate account
-  const handleDeactivate = async () => {
-    if (!window.confirm("Are you sure you want to deactivate this account?"))
+    if (!newPassword || !confirmPassword) {
+      setMessage("Password change cancelled.");
       return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+
     try {
-      await axios.put(
-        `http://localhost:8000/api/staff/${staffId}/deactivate`
-      );
-      setMessage("Account deactivated successfully.");
-    } catch (err) {
-      console.error("Error deactivating account:", err);
-      setMessage("Failed to deactivate account.");
+      const response = await axios.post("http://localhost:8000/api/staff/change-password", {
+        current_password: prompt("Enter current password:"),
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword
+      });
+      setMessage(response.data.message);
+    } catch (error) {
+      console.error("Error changing password:", error);
+      setMessage(error.response?.data?.message || "Failed to change password.");
     }
   };
+
+  // Clear message after 5 seconds
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   if (loading) {
     return (
@@ -127,7 +149,7 @@ const StaffProfile = () => {
     return (
       <StaffLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-red-400 text-lg">No staff data found.</p>
+          <p className="text-red-400 text-lg">No staff data found. Please log in.</p>
         </div>
       </StaffLayout>
     );
@@ -157,12 +179,16 @@ const StaffProfile = () => {
                     <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                   ) : staff.picture ? (
                     <img
-                      src={`http://127.0.0.1:8000/staff/image/${staff.picture}`}
+                      src={staff.picture}
                       alt={staff.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
                     />
                   ) : (
-                    staff.name?.charAt(0) || "?"
+                    <span>{staff.name?.charAt(0) || "?"}</span>
                   )}
                 </div>
                 {editing && (
@@ -300,15 +326,6 @@ const StaffProfile = () => {
                 </svg>
                 Change Password
               </button>
-              <button 
-                onClick={handleDeactivate}
-                className="border border-red-600 text-red-400 px-6 py-3 rounded-lg hover:bg-red-600 hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Deactivate Account
-              </button>
             </div>
           </div>
         </div>
@@ -316,7 +333,9 @@ const StaffProfile = () => {
         {/* Message */}
         {message && (
           <div className={`mt-4 p-4 rounded-lg border ${
-            message.includes("success") ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-red-500/10 border-red-500/30 text-red-400"
+            message.includes("success") || message.includes("updated") 
+              ? "bg-green-500/10 border-green-500/30 text-green-400" 
+              : "bg-red-500/10 border-red-500/30 text-red-400"
           }`}>
             {message}
           </div>

@@ -14,6 +14,12 @@ return [
     |
     */
 
+    'gcash' => [
+    'base_url' => env('GCASH_BASE_URL', 'https://api.gcash.com'),
+    'secret_key' => env('GCASH_SECRET_KEY'),
+    'merchant_id' => env('GCASH_MERCHANT_ID'),
+],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

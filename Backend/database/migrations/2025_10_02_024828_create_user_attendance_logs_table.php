@@ -10,12 +10,13 @@ return new class extends Migration
     {
         Schema::create('user_attendance_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('user_id'); // FK to users table
-            $table->dateTime('check_in')->nullable();
-            $table->dateTime('check_out')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->timestamp('check_in')->nullable();
+            $table->timestamp('check_out')->nullable();
+            $table->integer('duration_minutes')->nullable();
+            $table->enum('status', ['present', 'absent', 'late'])->default('present');
+            $table->text('notes')->nullable();
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

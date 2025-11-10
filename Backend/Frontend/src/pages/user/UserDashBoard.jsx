@@ -1,22 +1,112 @@
 import { useState, useEffect } from "react";
 import UserLayout from "./UserLayout";
+import { useNavigate } from "react-router-dom";
+import api from "../../utils/axiosConfig";
 
 export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [renewing, setRenewing] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await api.get('/dashboard');
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRenewMembership = async () => {
     setRenewing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setRenewing(false);
-    alert('Membership renewed successfully!');
+    try {
+      const response = await api.post('/dashboard/renew-membership');
+      alert(response.data.message);
+      await fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error renewing membership:', error);
+      alert(error.response?.data?.message || 'Failed to renew membership');
+    } finally {
+      setRenewing(false);
+    }
+  };
+
+  const handleProfileClick = () => {
+    navigate("/user/myprofile");
+  };
+
+  const getTrendIcon = (trend) => {
+    if (trend === 'up') {
+      return (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+      );
+    }
+    return (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+    );
+  };
+
+  const getActivityIcon = (activity) => {
+    const baseClasses = "w-5 h-5";
+    
+    switch (activity.icon) {
+      case 'check-in':
+        return (
+          <svg className={`${baseClasses} text-green-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'check-out':
+        return (
+          <svg className={`${baseClasses} text-blue-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        );
+      case 'membership':
+        return (
+          <svg className={`${baseClasses} text-red-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'payment':
+        return (
+          <svg className={`${baseClasses} text-green-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className={`${baseClasses} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+    }
+  };
+
+  const getPriorityBadge = (priority) => {
+    const baseClasses = "px-2 py-1 rounded text-xs font-medium border";
+    
+    switch (priority) {
+      case 'urgent':
+        return <span className={`${baseClasses} bg-red-600 text-white border-red-500`}>Urgent</span>;
+      case 'high':
+        return <span className={`${baseClasses} bg-orange-600 text-white border-orange-500`}>Important</span>;
+      case 'normal':
+        return <span className={`${baseClasses} bg-green-600 text-white border-green-500`}>Today</span>;
+      default:
+        return <span className={`${baseClasses} bg-gray-600 text-white border-gray-500`}>Info</span>;
+    }
   };
 
   if (loading) {
@@ -32,9 +122,10 @@ export default function UserDashboard() {
     );
   }
 
+  const { membership, attendance, workout_stats, recent_activities, quick_stats } = dashboardData;
+
   return (
     <UserLayout>
-      {/* 🔴 MAIN CONTENT */}
       <div className="w-full">
         {/* Header */}
         <div className="mb-8">
@@ -48,43 +139,60 @@ export default function UserDashboard() {
           <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-600/50 hover:border-red-600/70 transition-colors duration-300">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold text-white">Membership Status</h3>
-              <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                Active
+              <span className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                membership?.is_active 
+                  ? 'bg-green-500 text-white border-green-400' 
+                  : 'bg-red-500 text-white border-red-400'
+              }`}>
+                {membership?.status || 'Inactive'}
               </span>
             </div>
             <div className="space-y-4">
               <div>
-                <h4 className="text-lg font-medium text-white mb-1">Premium Membership</h4>
-                <p className="text-gray-300">Expires on July 15, 2024</p>
+                <h4 className="text-lg font-medium text-white mb-1">
+                  {membership?.type || 'No Membership'}
+                </h4>
+                <p className="text-gray-300">
+                  {membership ? `Expires on ${new Date(membership.end_date).toLocaleDateString()}` : 'Get started with a membership'}
+                </p>
               </div>
               
               {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <div className="bg-red-600 h-2.5 rounded-full transition-all duration-500" style={{width: '75%'}}></div>
+              {membership && (
+                <div className="space-y-2">
+                  <div className="w-full bg-gray-700 rounded-full h-2.5">
+                    <div 
+                      className="bg-red-600 h-2.5 rounded-full transition-all duration-500" 
+                      style={{width: `${membership.progress_percentage}%`}}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-300">
+                    {membership.progress_percentage}% of period used ({membership.progress_days_used}/{membership.progress_total_days} days)
+                  </p>
                 </div>
-                <p className="text-sm text-gray-300">75% of period used</p>
-              </div>
+              )}
 
-              <button 
-                onClick={handleRenewMembership}
-                disabled={renewing}
-                className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-400 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 border border-red-500 disabled:cursor-not-allowed"
-              >
-                {renewing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Renewing...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Renew Membership
-                  </>
-                )}
-              </button>
+              {membership?.is_active && (
+                <button 
+                  onClick={handleRenewMembership}
+                  disabled={renewing}
+                  className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-400 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2 border border-red-500 disabled:cursor-not-allowed"
+                >
+                  {renewing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Renewing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Renew Membership
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -97,13 +205,13 @@ export default function UserDashboard() {
               </svg>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">25</div>
+              <div className="text-4xl font-bold text-white mb-2">{attendance?.checkins_this_month || 0}</div>
               <p className="text-gray-300 mb-2">Check-ins this month</p>
-              <div className="text-green-400 text-sm font-medium flex items-center justify-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-                12% from last month
+              <div className={`text-sm font-medium flex items-center justify-center gap-1 ${
+                attendance?.trend === 'up' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {getTrendIcon(attendance?.trend)}
+                {Math.abs(attendance?.percentage_change || 0)}% from last month
               </div>
             </div>
           </div>
@@ -124,7 +232,7 @@ export default function UserDashboard() {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-white">18</div>
+                  <div className="text-xl font-bold text-white">{workout_stats?.workouts_completed || 0}</div>
                   <div className="text-gray-300 text-sm">Workouts Completed</div>
                 </div>
               </div>
@@ -136,7 +244,7 @@ export default function UserDashboard() {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-white">32h</div>
+                  <div className="text-xl font-bold text-white">{workout_stats?.total_time_hours || 0}h</div>
                   <div className="text-gray-300 text-sm">Total Time</div>
                 </div>
               </div>
@@ -148,7 +256,7 @@ export default function UserDashboard() {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-white">+8%</div>
+                  <div className="text-xl font-bold text-white">+{workout_stats?.progress_percentage || 0}%</div>
                   <div className="text-gray-300 text-sm">Progress</div>
                 </div>
               </div>
@@ -156,7 +264,7 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* 🔴 Notifications Section */}
+        {/* Notifications Section */}
         <section className="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-600/50 hover:border-red-600/70 transition-colors duration-300 mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Recent Activity</h2>
@@ -166,109 +274,49 @@ export default function UserDashboard() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-            {/* Notification 1 */}
-            <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/30 rounded-lg p-4 hover:border-red-500/50 transition-colors duration-300">
-              <div className="flex items-start gap-4">
-                <div className="bg-red-500/20 p-2 rounded-lg border border-red-500/30">
-                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-white">Membership Renewal Reminder</h4>
-                    <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium border border-red-500">Urgent</span>
+            {recent_activities?.map((activity, index) => (
+              <div 
+                key={index}
+                className={`border rounded-lg p-4 hover:border-${activity.color}-500/50 transition-colors duration-300 ${
+                  activity.priority === 'urgent' 
+                    ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-500/30' 
+                    : 'bg-gray-800 border-gray-600'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`bg-${activity.color}-500/20 p-2 rounded-lg border border-${activity.color}-500/30`}>
+                    {getActivityIcon(activity)}
                   </div>
-                  <p className="text-gray-300 text-sm mb-2">
-                    Your membership is expiring soon. Renew now to continue enjoying our facilities.
-                  </p>
-                  <span className="text-gray-400 text-xs">2 days ago</span>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-white">{activity.title}</h4>
+                      {getPriorityBadge(activity.priority)}
+                    </div>
+                    <p className="text-gray-300 text-sm mb-2">{activity.message}</p>
+                    <span className="text-gray-400 text-xs">{activity.time}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Notification 2 */}
-            <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 hover:border-red-500/30 transition-colors duration-300">
-              <div className="flex items-start gap-4">
-                <div className="bg-green-500/20 p-2 rounded-lg border border-green-500/30">
-                  <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-white">Check-in Confirmation</h4>
-                    <span className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium border border-green-500">Today</span>
-                  </div>
-                  <p className="text-gray-300 text-sm mb-2">
-                    You have successfully checked in at 6:00 AM.
-                  </p>
-                  <span className="text-gray-400 text-xs">3 hours ago</span>
-                </div>
+            ))}
+            
+            {(!recent_activities || recent_activities.length === 0) && (
+              <div className="col-span-2 text-center py-8">
+                <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-gray-300">No recent activities found</p>
+                <p className="text-gray-400 text-sm">Your activities will appear here</p>
               </div>
-            </div>
-
-            {/* Notification 3 */}
-            <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 hover:border-red-500/30 transition-colors duration-300">
-              <div className="flex items-start gap-4">
-                <div className="bg-blue-500/20 p-2 rounded-lg border border-blue-500/30">
-                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-white">Check-out Confirmation</h4>
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium border border-blue-500">Today</span>
-                  </div>
-                  <p className="text-gray-300 text-sm mb-2">
-                    You have successfully checked out at 7:30 AM.
-                  </p>
-                  <span className="text-gray-400 text-xs">1 hour ago</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Notification 4 */}
-            <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 hover:border-red-500/30 transition-colors duration-300">
-              <div className="flex items-start gap-4">
-                <div className="bg-purple-500/20 p-2 rounded-lg border border-purple-500/30">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-white">New Workout Program</h4>
-                    <span className="bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium border border-purple-500">New</span>
-                  </div>
-                  <p className="text-gray-300 text-sm mb-2">
-                    A new personalized workout program is available for you.
-                  </p>
-                  <span className="text-gray-400 text-xs">Just now</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
-        {/* 🔴 Quick Actions */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="bg-gray-800 hover:bg-gray-750 border border-gray-600 hover:border-red-500/50 rounded-lg p-4 text-center transition-colors duration-300 group">
-            <svg className="w-6 h-6 text-red-400 mx-auto mb-2 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            <span className="text-white text-sm group-hover:text-gray-200 transition-colors">Book Class</span>
-          </button>
-          
-          <button className="bg-gray-800 hover:bg-gray-750 border border-gray-600 hover:border-red-500/50 rounded-lg p-4 text-center transition-colors duration-300 group">
-            <svg className="w-6 h-6 text-red-400 mx-auto mb-2 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <span className="text-white text-sm group-hover:text-gray-200 transition-colors">View Schedule</span>
-          </button>
-          
-          <button className="bg-gray-800 hover:bg-gray-750 border border-gray-600 hover:border-red-500/50 rounded-lg p-4 text-center transition-colors duration-300 group">
+        {/* Quick Actions */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button 
+            onClick={handleProfileClick}
+            className="bg-gray-800 hover:bg-gray-750 border border-gray-600 hover:border-red-500/50 rounded-lg p-4 text-center transition-colors duration-300 group cursor-pointer"
+          >
             <svg className="w-6 h-6 text-red-400 mx-auto mb-2 group-hover:text-red-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>

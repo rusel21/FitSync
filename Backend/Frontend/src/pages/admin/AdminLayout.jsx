@@ -15,19 +15,22 @@ import {
   FaEye,
   FaChartLine
 } from "react-icons/fa";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Import auth context
 
 export default function AdminLayout({ children }) {
   const [isOpen, setIsOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { staff, logout } = useAuth(); // Get staff data and logout
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    await logout(); // Use context logout
+    navigate('/staff/login'); // Redirect to staff login
   };
 
   // Function to check if a link is active
@@ -50,7 +53,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="min-h-screen w-screen flex bg-gray-900 text-white overflow-x-hidden">
-      {/* 🔴 Sidebar - Updated for Reduced Admin Workload */}
+      {/* 🔴 Sidebar */}
       <div className={`bg-gray-800 border-r border-red-600 shadow-lg transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'}`}>
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-700">
@@ -69,7 +72,7 @@ export default function AdminLayout({ children }) {
           </div>
         </div>
 
-        {/* Sidebar Menu - Updated for Admin's Strategic Role */}
+        {/* Sidebar Menu */}
         <nav className="p-4">
           <ul className="space-y-2">
             {navItems.map((item) => {
@@ -101,8 +104,19 @@ export default function AdminLayout({ children }) {
             })}
           </ul>
 
+          {/* Quick Switch to Staff Portal */}
+          <div className="mt-4 pt-4 border-t border-gray-700">
+            <Link 
+              to="/staff/profile"
+              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-blue-600 transition-colors duration-200 text-gray-300 hover:text-white group"
+            >
+              <FaUser className="w-5 h-5 flex-shrink-0" />
+              {isOpen && <span>Switch to Staff Portal</span>}
+            </Link>
+          </div>
+
           {/* Logout Button */}
-          <div className="mt-8 pt-4 border-t border-gray-700">
+          <div className="mt-4 pt-4 border-t border-gray-700">
             <button 
               onClick={handleLogout}
               className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-600 transition-colors duration-200 text-gray-300 hover:text-white group w-full"
@@ -139,8 +153,21 @@ export default function AdminLayout({ children }) {
 
               {/* Admin Status Indicator */}
               <div className="bg-blue-600 px-3 py-1 rounded-full text-xs font-semibold">
-                STRATEGIC MODE
+                ADMINISTRATOR
               </div>
+
+              {/* Staff Information */}
+              {staff && (
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    {staff.name?.charAt(0) || 'A'}
+                  </div>
+                  <div className="text-sm text-right">
+                    <p className="text-white font-medium">{staff.name}</p>
+                    <p className="text-gray-400">ID: {staff.staff_id}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Notifications */}
               <button className="p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200 relative">
@@ -149,19 +176,6 @@ export default function AdminLayout({ children }) {
                 </svg>
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
-
-              {/* User Profile */}
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  A
-                </div>
-                {isOpen && (
-                  <div className="text-sm">
-                    <p className="text-white font-medium">Admin User</p>
-                    <p className="text-gray-400">Strategic Administrator</p>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </header>
@@ -180,7 +194,7 @@ export default function AdminLayout({ children }) {
               &copy; 2024 FitSync Admin Portal - Strategic Management System
             </p>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-400 text-sm">Reduced Operational Load</span>
+              <span className="text-gray-400 text-sm">Administrator Access</span>
               <p className="text-gray-400 text-sm">v2.0.0</p>
             </div>
           </div>

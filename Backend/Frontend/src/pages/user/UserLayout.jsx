@@ -1,10 +1,24 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function UserLayout({ children }) {
+  const location = useLocation();
+
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     window.location.href = '/login';
   };
+
+  // Function to check if a link is active
+  const isActiveLink = (path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  // Navigation items configuration
+  const navItems = [
+    { path: "/userdashboard", label: "Dashboard" },
+    { path: "/user/membership", label: "Membership" },
+    { path: "/user/payment", label: "Payment" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
@@ -25,24 +39,25 @@ export default function UserLayout({ children }) {
             {/* Center: Links */}
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                <Link
-                  to="/userdashboard"
-                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 hover:text-white transition-colors text-gray-300"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/user/membership"
-                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 hover:text-white transition-colors text-gray-300"
-                >
-                  Membership
-                </Link>
-                <Link
-                  to="/user/payment"
-                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 hover:text-white transition-colors text-gray-300"
-                >
-                  Payment
-                </Link>
+                {navItems.map((item) => {
+                  const isActive = isActiveLink(item.path);
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1 ${
+                        isActive
+                          ? 'bg-red-600 text-white shadow-lg border-b-2 border-red-400'
+                          : 'text-gray-300 hover:bg-red-600 hover:text-white'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      {isActive && (
+                        <span className="w-1.5 h-1.5 bg-red-300 rounded-full animate-pulse"></span>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -60,24 +75,25 @@ export default function UserLayout({ children }) {
         {/* Mobile menu */}
         <div className="md:hidden bg-gray-800 border-t border-gray-700">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link
-              to="/userdashboard"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-red-600 hover:text-white transition-colors text-gray-300"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/user/membership"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-red-600 hover:text-white transition-colors text-gray-300"
-            >
-              Membership
-            </Link>
-            <Link
-              to="/user/payment"
-              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-red-600 hover:text-white transition-colors text-gray-300"
-            >
-              Payment
-            </Link>
+            {navItems.map((item) => {
+              const isActive = isActiveLink(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`block px-3 py-2 rounded-md text-base font-medium transition-colors flex items-center justify-between ${
+                    isActive
+                      ? 'bg-red-600 text-white border-l-4 border-red-400'
+                      : 'text-gray-300 hover:bg-red-600 hover:text-white'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <span className="w-2 h-2 bg-red-300 rounded-full animate-pulse"></span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </nav>
