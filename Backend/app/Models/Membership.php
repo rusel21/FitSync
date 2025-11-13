@@ -31,6 +31,12 @@ class Membership extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Relationship with MembershipPlan
+    public function plan()
+    {
+        return $this->belongsTo(MembershipPlan::class, 'type', 'type');
+    }
+
     // Check if membership is active
     public function isActive()
     {
@@ -48,9 +54,9 @@ class Membership extends Model
     }
 
     // Calculate end date based on type
-    public static function calculateEndDate($type, $startDate)
+    public static function calculateEndDate($type, $startDate = null)
     {
-        $start = Carbon::parse($startDate);
+        $start = $startDate ? Carbon::parse($startDate) : Carbon::now();
         
         return match($type) {
             'Daily Plan' => $start->copy()->addDay(),
@@ -63,17 +69,55 @@ class Membership extends Model
         };
     }
 
-    // Get price based on type
+    // Get price based on type - NOW USES MEMBERSHIP PLAN
     public static function getPrice($type)
     {
-        return match($type) {
-            'Daily Plan' => 10.00,
-            'Semi-Monthly Plan' => 45.00,
-            'Monthly Plan' => 79.00,
-            'Premium' => 99.00,
-            'Yearly' => 79.00, // per month equivalent
-            'Quarterly' => 89.00, // per month equivalent
-            default => 79.00,
-        };
+        return MembershipPlan::getPriceByType($type);
+    }
+
+    // Create membership with plan-based pricing
+    public static function createWithPlan($userId, $type, $startDate = null)
+    {
+        $startDate = $startDate ?: now();
+        $price = self::getPrice($type);
+        $endDate = self::calculateEndDate($type, $startDate);
+
+        return self::create([
+            'user_id' => $userId,
+            'type' => $type,
+            'price' => $price,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'status' => 'active'
+        ]);
+    }
+
+    // Get current plan details
+    public function getPlanDetailsAttribute()
+    {
+        return MembershipPlan::getPlanByType($this->type);
+    }
+
+    // Renew membership
+    public function renew()
+    {
+        $newStartDate = $this->end_date->copy()->addDay();
+        $newEndDate = self::calculateEndDate($this->type, $newStartDate);
+        $price = self::getPrice($this->type);
+
+        return self::create([
+            'user_id' => $this->user_id,
+            'type' => $this->type,
+            'price' => $price,
+            'start_date' => $newStartDate,
+            'end_date' => $newEndDate,
+            'status' => 'active'
+        ]);
+    }
+
+    // Check if membership is expiring soon (within 7 days)
+    public function getIsExpiringSoonAttribute()
+    {
+        return $this->isActive() && $this->days_remaining <= 7;
     }
 }

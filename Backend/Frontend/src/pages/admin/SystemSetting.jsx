@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { 
   FaSave, 
-  FaUpload, 
-  FaDownload, 
   FaKey, 
-  FaDatabase, 
   FaCreditCard, 
   FaCog 
 } from "react-icons/fa";
@@ -32,30 +29,14 @@ const SystemSettings = () => {
     sessionTimeout: 30,
     
     // System
-    autoBackup: true,
-    backupFrequency: "daily",
-    maintenanceMode: false,
     emailNotifications: true
   });
 
   const [activeTab, setActiveTab] = useState("general");
-  // Fixed: Using SVG data URL instead of external placeholder
-  const [logoPreview, setLogoPreview] = useState("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23374151'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='10' fill='%239CA3AF'%3ELOGO%3C/text%3E%3C/svg%3E");
   const [saving, setSaving] = useState(false);
 
   const handleInputChange = (field, value) => {
     setSettings(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleSaveChanges = async () => {
@@ -64,20 +45,6 @@ const SystemSettings = () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
     setSaving(false);
     alert("Settings saved successfully!");
-  };
-
-  const handleBackupDatabase = () => {
-    alert("Database backup initiated. You will receive a notification when complete.");
-  };
-
-  const handleRestoreDatabase = () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.sql,.backup';
-    fileInput.onchange = (e) => {
-      alert("Database restore process started...");
-    };
-    fileInput.click();
   };
 
   const handleChangePassword = () => {
@@ -101,8 +68,7 @@ const SystemSettings = () => {
   const tabs = [
     { id: "general", name: "General", icon: FaCog },
     { id: "payment", name: "Payment", icon: FaCreditCard },
-    { id: "security", name: "Security", icon: FaKey },
-    { id: "database", name: "Database", icon: FaDatabase }
+    { id: "security", name: "Security", icon: FaKey }
   ];
 
   return (
@@ -190,30 +156,6 @@ const SystemSettings = () => {
                       onChange={(e) => handleInputChange("businessHours", e.target.value)}
                       className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
                     />
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-700 pt-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">Gym Logo</label>
-                  <div className="flex items-center space-x-4">
-                    <img
-                      src={logoPreview}
-                      alt="Gym Logo"
-                      className="w-16 h-16 rounded-lg border border-gray-600 object-cover"
-                    />
-                    <div className="flex-1">
-                      <label className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors duration-200 border border-gray-600 inline-flex items-center space-x-2">
-                        <FaUpload className="w-4 h-4" />
-                        <span>Upload New Logo</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-gray-400 text-sm mt-2">Recommended: 200x200px PNG or JPG</p>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -357,67 +299,6 @@ const SystemSettings = () => {
                       />
                       <span className="text-gray-300">Email Security Notifications</span>
                     </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Database Settings */}
-            {activeTab === "database" && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-white mb-4">Database Management</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-750 rounded-lg p-6 border border-gray-600">
-                    <FaDownload className="w-8 h-8 text-blue-400 mb-3" />
-                    <h3 className="text-lg font-semibold text-white mb-2">Backup Database</h3>
-                    <p className="text-gray-400 text-sm mb-4">Create a full backup of your system data</p>
-                    <button
-                      onClick={handleBackupDatabase}
-                      className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors duration-200 border border-blue-500 w-full"
-                    >
-                      Backup Now
-                    </button>
-                  </div>
-                  
-                  <div className="bg-gray-750 rounded-lg p-6 border border-gray-600">
-                    <FaUpload className="w-8 h-8 text-green-400 mb-3" />
-                    <h3 className="text-lg font-semibold text-white mb-2">Restore Database</h3>
-                    <p className="text-gray-400 text-sm mb-4">Restore system from a backup file</p>
-                    <button
-                      onClick={handleRestoreDatabase}
-                      className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-colors duration-200 border border-green-500 w-full"
-                    >
-                      Restore Backup
-                    </button>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-700 pt-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Automated Backups</h3>
-                  <div className="space-y-4">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.autoBackup}
-                        onChange={(e) => handleInputChange("autoBackup", e.target.checked)}
-                        className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500 focus:ring-2"
-                      />
-                      <span className="text-gray-300">Enable Automatic Backups</span>
-                    </label>
-                    
-                    <div className="flex items-center space-x-4">
-                      <label className="text-gray-300 text-sm">Backup Frequency:</label>
-                      <select
-                        value={settings.backupFrequency}
-                        onChange={(e) => handleInputChange("backupFrequency", e.target.value)}
-                        className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                      >
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
               </div>

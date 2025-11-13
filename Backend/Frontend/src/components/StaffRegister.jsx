@@ -12,6 +12,8 @@ export default function StaffRegister() {
     phone: "",
     address: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [picture, setPicture] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,101 +47,130 @@ export default function StaffRegister() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
+  e.preventDefault();
+  setLoading(true);
+  setMessage("");
 
-    // Validate passwords match
-    if (formData.password !== formData.password_confirmation) {
-      setMessage("❌ Passwords do not match");
+  // Validate passwords match
+  if (formData.password !== formData.password_confirmation) {
+    setMessage("❌ Passwords do not match");
+    setLoading(false);
+    return;
+  }
+
+  // Validate password strength
+  if (formData.password.length < 6) {
+    setMessage("❌ Password must be at least 6 characters long");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // Check if current user is admin
+    if (!currentStaff || currentStaff.role !== 'Admin') {
+      setMessage("❌ Only administrators can register new staff members");
       setLoading(false);
       return;
     }
 
-    // Validate password strength
-    if (formData.password.length < 6) {
-      setMessage("❌ Password must be at least 6 characters long");
+    // Check if token exists
+    if (!token) {
+      setMessage("❌ Please login first");
       setLoading(false);
       return;
     }
 
+    const formDataToSend = new FormData();
+    
+    // Append all form data
+    Object.keys(formData).forEach(key => {
+      if (formData[key]) {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
+    
+    // Append picture if selected
+    if (picture) {
+      formDataToSend.append('picture', picture);
+    }
+
+    console.log('Sending registration request...');
+
+    const response = await fetch("http://localhost:8000/api/staff/register", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/json",
+      },
+      body: formDataToSend,
+    });
+
+    // Get the raw response text first
+    const responseText = await response.text();
+    console.log('Raw response status:', response.status);
+    console.log('Raw response (first 500 chars):', responseText.substring(0, 500));
+
+    let data;
     try {
-      // Check if current user is admin
-      if (!currentStaff || currentStaff.role !== 'Admin') {
-        setMessage("❌ Only administrators can register new staff members");
-        setLoading(false);
-        return;
-      }
-
-      // Check if token exists
-      if (!token) {
-        setMessage("❌ Please login first");
-        setLoading(false);
-        return;
-      }
-
-      const formDataToSend = new FormData();
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError);
       
-      // Append all form data
-      Object.keys(formData).forEach(key => {
-        if (formData[key]) {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
-      
-      // Append picture if selected
-      if (picture) {
-        formDataToSend.append('picture', picture);
-      }
-
-      const response = await fetch("http://localhost:8000/api/staff/register", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          // Don't set Content-Type for FormData - let browser set it with boundary
-        },
-        body: formDataToSend,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage("✅ Staff member registered successfully!");
-        // Reset form
-        setFormData({
-          name: "",
-          email: "",
-          password: "",
-          password_confirmation: "",
-          role: "Staff",
-          phone: "",
-          address: ""
-        });
-        setPicture(null);
-        
-        // Redirect after delay
-        setTimeout(() => {
-          navigate("/admin/staffmanagement");
-        }, 2000);
+      // Check if it's an HTML error page
+      if (responseText.includes('<!DOCTYPE') || responseText.includes('<html') || responseText.includes('<!doctype')) {
+        setMessage("❌ Server error (500): Laravel returned an error page. Check your Laravel logs at storage/logs/laravel.log");
       } else {
-        // Handle validation errors
-        if (data.errors) {
-          const errorMessages = Object.values(data.errors).flat().join(', ');
-          setMessage(`❌ ${errorMessages}`);
-        } else {
-          setMessage(`❌ ${data.message || "Registration failed"}`);
-        }
+        setMessage(`❌ Server returned invalid response: ${responseText.substring(0, 100)}...`);
       }
-    } catch (error) {
-      console.error("Registration error:", error);
-      setMessage("❌ Network error. Please try again.");
-    } finally {
       setLoading(false);
+      return;
     }
-  };
+
+    if (response.ok) {
+      setMessage("✅ Staff member registered successfully!");
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        password_confirmation: "",
+        role: "Staff",
+        phone: "",
+        address: ""
+      });
+      setPicture(null);
+      
+      // Redirect after delay
+      setTimeout(() => {
+        navigate("/admin/staffmanagement");
+      }, 2000);
+    } else {
+      // Handle validation errors
+      if (data.errors) {
+        const errorMessages = Object.values(data.errors).flat().join(', ');
+        setMessage(`❌ ${errorMessages}`);
+      } else {
+        setMessage(`❌ ${data.message || "Registration failed"}`);
+      }
+    }
+  } catch (error) {
+    console.error("Registration error:", error);
+    setMessage(`❌ ${error.message || "Network error. Please try again."}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Check if current user is admin
   const isAdmin = currentStaff?.role === 'Admin';
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
@@ -213,31 +244,71 @@ export default function StaffRegister() {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Password *
                   </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    required
-                    disabled={loading}
-                    minLength="6"
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50"
-                    placeholder="Minimum 6 characters"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      required
+                      disabled={loading}
+                      minLength="6"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 pr-10"
+                      placeholder="Minimum 6 characters"
+                    />
+                    {/* Show/Hide Password Button */}
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      disabled={loading}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {showPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Confirm Password *
                   </label>
-                  <input
-                    type="password"
-                    value={formData.password_confirmation}
-                    onChange={(e) => handleInputChange('password_confirmation', e.target.value)}
-                    required
-                    disabled={loading}
-                    minLength="6"
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50"
-                    placeholder="Confirm password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.password_confirmation}
+                      onChange={(e) => handleInputChange('password_confirmation', e.target.value)}
+                      required
+                      disabled={loading}
+                      minLength="6"
+                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 pr-10"
+                      placeholder="Confirm password"
+                    />
+                    {/* Show/Hide Confirm Password Button */}
+                    <button
+                      type="button"
+                      onClick={toggleConfirmPasswordVisibility}
+                      disabled={loading}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 

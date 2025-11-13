@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // First, clear all existing tokens (they're invalid anyway)
-        \DB::table('personal_access_tokens')->truncate();
+        \Illuminate\Support\Facades\DB::table('personal_access_tokens')->truncate();
 
         // Change tokenable_id to big integer
         Schema::table('personal_access_tokens', function (Blueprint $table) {

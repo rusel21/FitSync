@@ -1,9 +1,12 @@
 // Token management utilities
 export const getToken = () => {
-  return localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  console.log('getToken() called, returning:', token);
+  return token;
 };
 
 export const setToken = (token) => {
+  console.log('setToken() called with:', token);
   localStorage.setItem('token', token);
 };
 

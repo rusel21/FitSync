@@ -1,16 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StaffLayout from "./StaffLayout";
 
 const PaymentTracking = () => {
   const [selectedPayments, setSelectedPayments] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    membership_type: 'all',
+    status: 'all',
+    date: ''
+  });
+  const [summary, setSummary] = useState({
+    total_received: 0,
+    pending_amount: 0,
+    overdue_amount: 0
+  });
 
-  const payments = [
-    { id: 1, userId: "FTS001", name: "John Doe", membership: "Monthly Plan", amountDue: 50, amountPaid: 50, paymentDate: "2024-07-25", status: "paid" },
-    { id: 2, userId: "FTS002", name: "Jane Smith", membership: "Premium Plan", amountDue: 99, amountPaid: 0, paymentDate: "2024-07-20", status: "overdue" },
-    { id: 3, userId: "FTS003", name: "Mike Johnson", membership: "Yearly Plan", amountDue: 948, amountPaid: 948, paymentDate: "2024-07-18", status: "paid" },
-    { id: 4, userId: "FTS004", name: "Sarah Wilson", membership: "Monthly Plan", amountDue: 50, amountPaid: 0, paymentDate: "2024-07-28", status: "pending" },
-    { id: 5, userId: "FTS005", name: "Chris Brown", membership: "Quarterly Plan", amountDue: 267, amountPaid: 267, paymentDate: "2024-07-22", status: "paid" },
-  ];
+  // Fetch payments on component mount and filter change
+  useEffect(() => {
+    fetchPayments();
+  }, [filters]);
+
+  const fetchPayments = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await fetch(`/api/staff/payments?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const data = await response.json();
+      setPayments(data.payments);
+      setSummary(data.summary);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      alert('Failed to fetch payments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ADD THIS MISSING FUNCTION
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedPayments(payments.map(p => p.id));
+    } else {
+      setSelectedPayments([]);
+    }
+  };
 
   const handleSelectPayment = (paymentId) => {
     setSelectedPayments(prev =>
@@ -20,39 +69,91 @@ const PaymentTracking = () => {
     );
   };
 
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedPayments(payments.map(p => p.id));
-    } else {
-      setSelectedPayments([]);
-    }
-  };
-
-  const handleMarkAsPaid = () => {
+  const handleMarkAsPaid = async () => {
     if (selectedPayments.length === 0) {
       alert("Please select payments to mark as paid");
       return;
     }
-    alert(`Marking ${selectedPayments.length} payment(s) as paid`);
-    // Add your API call here
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/staff/payments/mark-paid', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ payment_ids: selectedPayments })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Successfully marked ${data.updated_count} payment(s) as paid`);
+        setSelectedPayments([]);
+        fetchPayments(); // Refresh the list
+      } else {
+        alert('Failed to mark payments as paid: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error marking payments as paid:', error);
+      alert('Failed to mark payments as paid');
+    }
   };
 
-  const handleSendReminders = () => {
+  const handleSendReminders = async () => {
     if (selectedPayments.length === 0) {
       alert("Please select payments to send reminders");
       return;
     }
-    alert(`Sending reminders for ${selectedPayments.length} payment(s)`);
-    // Add your API call here
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/staff/payments/send-reminders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ payment_ids: selectedPayments })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Reminders sent for ${data.reminder_count} payment(s)`);
+      } else {
+        alert('Failed to send reminders: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error sending reminders:', error);
+      alert('Failed to send reminders');
+    }
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleApplyFilters = () => {
+    fetchPayments();
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "paid": return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "completed": return "bg-green-500/20 text-green-400 border-green-500/30";
       case "pending": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
       case "overdue": return "bg-red-500/20 text-red-400 border-red-500/30";
+      case "cancelled": return "bg-gray-500/20 text-gray-400 border-gray-500/30";
       default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
+  };
+
+  const formatCurrency = (amount) => {
+    return '₱' + parseFloat(amount).toFixed(2);
   };
 
   return (
@@ -67,28 +168,44 @@ const PaymentTracking = () => {
             <input 
               type="text" 
               placeholder="Search by name, ID, membership..." 
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
               className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
             />
-            <select className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors">
-              <option>Membership: All</option>
-              <option>Daily Plan</option>
-              <option>Semi-Monthly Plan</option>
-              <option>Monthly Plan</option>
-              <option>Premium Plan</option>
-              <option>Yearly Plan</option>
-              <option>Quarterly Plan</option>
+            <select 
+              value={filters.membership_type}
+              onChange={(e) => handleFilterChange('membership_type', e.target.value)}
+              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+            >
+              <option value="all">Membership: All</option>
+              <option value="Daily Plan">Daily Plan</option>
+              <option value="Semi-Monthly Plan">Semi-Monthly Plan</option>
+              <option value="Monthly Plan">Monthly Plan</option>
+              <option value="Premium Plan">Premium Plan</option>
+              <option value="Yearly Plan">Yearly Plan</option>
+              <option value="Quarterly Plan">Quarterly Plan</option>
             </select>
-            <select className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors">
-              <option>Status: All</option>
-              <option>Paid</option>
-              <option>Pending</option>
-              <option>Overdue</option>
+            <select 
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+            >
+              <option value="all">Status: All</option>
+              <option value="completed">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
             </select>
             <input 
               type="date" 
+              value={filters.date}
+              onChange={(e) => handleFilterChange('date', e.target.value)}
               className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
             />
-            <button className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-red-500">
+            <button 
+              onClick={handleApplyFilters}
+              className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-red-500"
+            >
               Apply Filters
             </button>
           </div>
@@ -100,7 +217,7 @@ const PaymentTracking = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Total Payments Received</p>
-                <p className="text-2xl font-bold text-white mt-2">$12,450.00</p>
+                <p className="text-2xl font-bold text-white mt-2">{formatCurrency(summary.total_received)}</p>
               </div>
               <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,7 +231,7 @@ const PaymentTracking = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Pending Payments</p>
-                <p className="text-2xl font-bold text-white mt-2">$1,230.00</p>
+                <p className="text-2xl font-bold text-white mt-2">{formatCurrency(summary.pending_amount)}</p>
               </div>
               <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,7 +245,7 @@ const PaymentTracking = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-300 text-sm">Overdue Payments</p>
-                <p className="text-2xl font-bold text-white mt-2">$450.00</p>
+                <p className="text-2xl font-bold text-white mt-2">{formatCurrency(summary.overdue_amount)}</p>
               </div>
               <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,29 +284,43 @@ const PaymentTracking = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-750 transition-colors">
-                    <td className="px-4 py-3">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedPayments.includes(payment.id)}
-                        onChange={() => handleSelectPayment(payment.id)}
-                        className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500 focus:ring-2"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-white">{payment.userId}</td>
-                    <td className="px-4 py-3 text-white">{payment.name}</td>
-                    <td className="px-4 py-3 text-gray-300">{payment.membership}</td>
-                    <td className="px-4 py-3 text-white">${payment.amountDue}.00</td>
-                    <td className="px-4 py-3 text-white">${payment.amountPaid}.00</td>
-                    <td className="px-4 py-3 text-gray-300">{payment.paymentDate}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
-                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                      </span>
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
+                      Loading payments...
                     </td>
                   </tr>
-                ))}
+                ) : payments.length > 0 ? (
+                  payments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-gray-750 transition-colors">
+                      <td className="px-4 py-3">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedPayments.includes(payment.id)}
+                          onChange={() => handleSelectPayment(payment.id)}
+                          className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500 focus:ring-2"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-white">{payment.user_display_id || payment.user_id}</td>
+                      <td className="px-4 py-3 text-white">{payment.name}</td>
+                      <td className="px-4 py-3 text-gray-300">{payment.membership_type}</td>
+                      <td className="px-4 py-3 text-white">{formatCurrency(payment.amount_due)}</td>
+                      <td className="px-4 py-3 text-white">{formatCurrency(payment.amount_paid)}</td>
+                      <td className="px-4 py-3 text-gray-300">{payment.payment_date}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
+                          {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-8 text-center text-gray-400">
+                      No payments found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -199,7 +330,8 @@ const PaymentTracking = () => {
             <div className="flex space-x-3">
               <button 
                 onClick={handleMarkAsPaid}
-                className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 border border-green-500 flex items-center gap-2"
+                disabled={selectedPayments.length === 0}
+                className="bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 border border-green-500 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -208,7 +340,8 @@ const PaymentTracking = () => {
               </button>
               <button 
                 onClick={handleSendReminders}
-                className="bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 border border-yellow-500 flex items-center gap-2"
+                disabled={selectedPayments.length === 0}
+                className="bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 border border-yellow-500 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -217,7 +350,7 @@ const PaymentTracking = () => {
               </button>
             </div>
             <div className="text-gray-400 text-sm">
-              {selectedPayments.length > 0 ? `${selectedPayments.length} selected` : "1-5 of 124 payments"}
+              {selectedPayments.length > 0 ? `${selectedPayments.length} selected` : `${payments.length} payments`}
             </div>
           </div>
         </div>

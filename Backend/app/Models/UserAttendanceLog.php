@@ -24,3 +24,4 @@ class UserAttendanceLog extends Model
     }
     
 }
+        

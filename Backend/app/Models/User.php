@@ -32,7 +32,7 @@ class User extends Authenticatable
         'role',
         'picture',
         'membership_type',
-        'user_id', // ✅ added here
+        'user_id',
     ];
 
     /**

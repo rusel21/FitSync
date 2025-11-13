@@ -7,7 +7,26 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [renewing, setRenewing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // Default data structure to prevent undefined errors
+  const defaultDashboardData = {
+    membership: null,
+    attendance: { 
+      checkins_this_month: 0, 
+      percentage_change: 0, 
+      trend: 'up',
+      attendance_rate: 0 
+    },
+    recent_activities: [],
+    quick_stats: { 
+      total_checkins: 0, 
+      total_workouts: 0, 
+      current_streak: 0, 
+      attendance_rate: 0 
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -15,10 +34,20 @@ export default function UserDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      setError(null);
+      setLoading(true);
       const response = await api.get('/dashboard');
-      setDashboardData(response.data);
+      
+      if (response.data) {
+        setDashboardData(response.data);
+      } else {
+        throw new Error('No data received from server');
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setError(error.response?.data?.message || 'Failed to load dashboard data');
+      // Set default data even on error to prevent crashes
+      setDashboardData(defaultDashboardData);
     } finally {
       setLoading(false);
     }
@@ -60,6 +89,14 @@ export default function UserDashboard() {
   const getActivityIcon = (activity) => {
     const baseClasses = "w-5 h-5";
     
+    if (!activity) {
+      return (
+        <svg className={`${baseClasses} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    }
+    
     switch (activity.icon) {
       case 'check-in':
         return (
@@ -97,6 +134,8 @@ export default function UserDashboard() {
   const getPriorityBadge = (priority) => {
     const baseClasses = "px-2 py-1 rounded text-xs font-medium border";
     
+    if (!priority) priority = 'normal';
+    
     switch (priority) {
       case 'urgent':
         return <span className={`${baseClasses} bg-red-600 text-white border-red-500`}>Urgent</span>;
@@ -108,6 +147,10 @@ export default function UserDashboard() {
         return <span className={`${baseClasses} bg-gray-600 text-white border-gray-500`}>Info</span>;
     }
   };
+
+  // Safe data access
+  const data = dashboardData || defaultDashboardData;
+  const { membership, attendance, recent_activities, quick_stats } = data;
 
   if (loading) {
     return (
@@ -122,19 +165,61 @@ export default function UserDashboard() {
     );
   }
 
-  const { membership, attendance, workout_stats, recent_activities, quick_stats } = dashboardData;
+  if (error && !dashboardData) {
+    return (
+      <UserLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+              <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Failed to Load Dashboard</h3>
+            <p className="text-gray-300 mb-4">{error}</p>
+            <button 
+              onClick={fetchDashboardData}
+              className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
 
   return (
     <UserLayout>
       <div className="w-full">
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-red-300">{error}</span>
+              </div>
+              <button 
+                onClick={fetchDashboardData}
+                className="text-red-400 hover:text-red-300 text-sm font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-white mb-2">Membership Dashboard</h2>
           <p className="text-gray-300">Welcome back! Here's your fitness overview.</p>
         </div>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+        {/* Dashboard Grid - Now 2 columns instead of 3 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
           {/* Membership Card */}
           <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-600/50 hover:border-red-600/70 transition-colors duration-300">
             <div className="flex justify-between items-start mb-4">
@@ -163,11 +248,11 @@ export default function UserDashboard() {
                   <div className="w-full bg-gray-700 rounded-full h-2.5">
                     <div 
                       className="bg-red-600 h-2.5 rounded-full transition-all duration-500" 
-                      style={{width: `${membership.progress_percentage}%`}}
+                      style={{width: `${membership.progress_percentage || 0}%`}}
                     ></div>
                   </div>
                   <p className="text-sm text-gray-300">
-                    {membership.progress_percentage}% of period used ({membership.progress_days_used}/{membership.progress_total_days} days)
+                    {membership.progress_percentage || 0}% of period used ({membership.progress_days_used || 0}/{membership.progress_total_days || 0} days)
                   </p>
                 </div>
               )}
@@ -210,55 +295,56 @@ export default function UserDashboard() {
               <div className={`text-sm font-medium flex items-center justify-center gap-1 ${
                 attendance?.trend === 'up' ? 'text-green-400' : 'text-red-400'
               }`}>
-                {getTrendIcon(attendance?.trend)}
+                {getTrendIcon(attendance?.trend || 'up')}
                 {Math.abs(attendance?.percentage_change || 0)}% from last month
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Workout Stats Card */}
+        {/* Additional Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+          {/* Total Check-ins */}
           <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-600/50 hover:border-red-600/70 transition-colors duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-white">Workout Stats</h3>
-              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
+            <div className="flex items-center gap-4">
+              <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{quick_stats?.total_checkins || 0}</div>
+                <div className="text-gray-300 text-sm">Total Check-ins</div>
+              </div>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 group">
-                <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30 group-hover:border-red-500/50 transition-colors">
-                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-white">{workout_stats?.workouts_completed || 0}</div>
-                  <div className="text-gray-300 text-sm">Workouts Completed</div>
-                </div>
+          </div>
+
+          {/* Current Streak */}
+          <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-600/50 hover:border-red-600/70 transition-colors duration-300">
+            <div className="flex items-center gap-4">
+              <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
               </div>
-              
-              <div className="flex items-center gap-4 group">
-                <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30 group-hover:border-red-500/50 transition-colors">
-                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-white">{workout_stats?.total_time_hours || 0}h</div>
-                  <div className="text-gray-300 text-sm">Total Time</div>
-                </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{quick_stats?.current_streak || 0}</div>
+                <div className="text-gray-300 text-sm">Current Streak</div>
               </div>
-              
-              <div className="flex items-center gap-4 group">
-                <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30 group-hover:border-red-500/50 transition-colors">
-                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-white">+{workout_stats?.progress_percentage || 0}%</div>
-                  <div className="text-gray-300 text-sm">Progress</div>
-                </div>
+            </div>
+          </div>
+
+          {/* Attendance Rate */}
+          <div className="bg-gray-800 rounded-xl p-6 shadow-lg border border-red-600/50 hover:border-red-600/70 transition-colors duration-300">
+            <div className="flex items-center gap-4">
+              <div className="bg-red-500/20 p-3 rounded-lg border border-red-500/30">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{quick_stats?.attendance_rate || 0}%</div>
+                <div className="text-gray-300 text-sm">Attendance Rate</div>
               </div>
             </div>
           </div>
@@ -274,32 +360,37 @@ export default function UserDashboard() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-            {recent_activities?.map((activity, index) => (
-              <div 
-                key={index}
-                className={`border rounded-lg p-4 hover:border-${activity.color}-500/50 transition-colors duration-300 ${
-                  activity.priority === 'urgent' 
-                    ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-500/30' 
-                    : 'bg-gray-800 border-gray-600'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`bg-${activity.color}-500/20 p-2 rounded-lg border border-${activity.color}-500/30`}>
-                    {getActivityIcon(activity)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-white">{activity.title}</h4>
-                      {getPriorityBadge(activity.priority)}
+            {recent_activities && recent_activities.length > 0 ? (
+              recent_activities.map((activity, index) => (
+                <div 
+                  key={index}
+                  className={`border rounded-lg p-4 transition-colors duration-300 ${
+                    activity.priority === 'urgent' 
+                      ? 'bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-500/30' 
+                      : 'bg-gray-800 border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-2 rounded-lg border ${
+                      activity.color === 'red' ? 'bg-red-500/20 border-red-500/30' :
+                      activity.color === 'green' ? 'bg-green-500/20 border-green-500/30' :
+                      activity.color === 'blue' ? 'bg-blue-500/20 border-blue-500/30' :
+                      'bg-gray-500/20 border-gray-500/30'
+                    }`}>
+                      {getActivityIcon(activity)}
                     </div>
-                    <p className="text-gray-300 text-sm mb-2">{activity.message}</p>
-                    <span className="text-gray-400 text-xs">{activity.time}</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-white">{activity.title || 'Activity'}</h4>
+                        {getPriorityBadge(activity.priority)}
+                      </div>
+                      <p className="text-gray-300 text-sm mb-2">{activity.message || 'No message'}</p>
+                      <span className="text-gray-400 text-xs">{activity.time || 'Recently'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            
-            {(!recent_activities || recent_activities.length === 0) && (
+              ))
+            ) : (
               <div className="col-span-2 text-center py-8">
                 <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

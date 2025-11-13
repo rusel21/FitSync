@@ -45,9 +45,7 @@ export default function AdminLayout({ children }) {
     { path: "/admin/membershipplanmanagement", icon: FaDumbbell, label: "Plan Management" },
     { path: "/admin/attendancelogs", icon: FaChartLine, label: "Attendance Analytics" },
     { path: "/admin/analytics", icon: FaChartBar, label: "Business Analytics" },
-    { path: "/admin/paymentmanagement", icon: FaMoneyBillWave, label: "Revenue Reports" },
     { path: "/admin/staffmanagement", icon: FaUsers, label: "Staff Management" },
-    { path: "/admin/rolemanagement", icon: FaUserShield, label: "System Permissions" },
     { path: "/admin/systemsettings", icon: FaCog, label: "System Settings" },
   ];
 

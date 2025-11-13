@@ -12,7 +12,6 @@ const MemberManagement = () => {
     address: "",
     contact: "",
     membership_type: "",
-    role: "",
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,17 +21,82 @@ const MemberManagement = () => {
   const genderOptions = ["Male", "Female", "Other"];
   const membershipOptions = ["Daily Plan", "Semi-Monthly Plan", "Monthly Plan", "Premium Plan", "Yearly Plan", "Quarterly Plan"];
 
+  // Backend URL
+  const BACKEND_URL = "http://127.0.0.1:8000";
+
+  // Configure axios globally when component mounts
+  useEffect(() => {
+    axios.defaults.baseURL = BACKEND_URL;
+    axios.defaults.withCredentials = true;
+    axios.defaults.headers.common['Accept'] = 'application/json';
+    axios.defaults.headers.common['Content-Type'] = 'application/json';
+    axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+  }, []);
+
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [searchTerm, filterMembership]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:8000/api/users");
-      setUsers(res.data);
+      
+      const token = localStorage.getItem('staff_token') || 
+                    localStorage.getItem('admin_token') || 
+                    localStorage.getItem('token');
+      
+      if (!token) {
+        alert('No authentication token found. Please log in again.');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (filterMembership) params.append('membership_type', filterMembership);
+
+      const url = `/api/admin/users?${params}`;
+
+      const res = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        timeout: 10000,
+        withCredentials: true
+      });
+
+      // Handle different response formats
+      if (res.data) {
+        if (res.data.success) {
+          setUsers(res.data.users || []);
+        } else if (Array.isArray(res.data)) {
+          setUsers(res.data);
+        } else {
+          setUsers(res.data.users || res.data.data || []);
+        }
+      } else {
+        throw new Error('Empty response from server');
+      }
+      
     } catch (err) {
-      console.error("Error fetching users:", err);
+      console.error('Error fetching users:', err);
+      
+      if (err.response) {
+        if (err.response.status === 401) {
+          alert('Session expired. Please log in again.');
+          localStorage.removeItem('staff_token');
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('token');
+          window.location.reload();
+        } else if (err.response.status === 403) {
+          alert('Access denied. Admin privileges required.');
+        } else {
+          alert(`Error ${err.response.status}: ${err.response.data?.message || 'Server error'}`);
+        }
+      } else if (err.request) {
+        alert('Network error: Could not connect to server. Please check if Laravel is running on port 8000.');
+      } else {
+        alert('Error: ' + err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -41,8 +105,23 @@ const MemberManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`http://localhost:8000/api/users/${id}`);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      const token = localStorage.getItem('staff_token') || 
+                    localStorage.getItem('admin_token') || 
+                    localStorage.getItem('token');
+      
+      const res = await axios.delete(`/api/admin/users/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true
+      });
+
+      if (res.data.success) {
+        setUsers((prev) => prev.filter((u) => u.id !== id));
+        alert('User deleted successfully!');
+      } else {
+        alert('Error deleting user: ' + res.data.message);
+      }
     } catch (err) {
       console.error("Error deleting user:", err);
       alert("Error deleting user. Please try again.");
@@ -58,31 +137,42 @@ const MemberManagement = () => {
       address: user.address || "",
       contact: user.contact || "",
       membership_type: user.membership_type || "",
-      role: user.role || "",
     });
   };
 
   const handleUpdate = async () => {
     try {
-      const { role, ...dataToUpdate } = formData;
-      await axios.put(`http://localhost:8000/api/users/${editingUser.id}`, dataToUpdate);
-      fetchUsers();
-      setEditingUser(null);
-      alert("User updated successfully!");
+      const token = localStorage.getItem('staff_token') || 
+                    localStorage.getItem('admin_token') || 
+                    localStorage.getItem('token');
+      
+      const res = await axios.put(`/api/admin/users/${editingUser.id}`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true
+      });
+
+      if (res.data.success) {
+        fetchUsers();
+        setEditingUser(null);
+        alert("User updated successfully!");
+      } else {
+        alert("Error updating user: " + res.data.message);
+      }
     } catch (err) {
       console.error("Error updating user:", err);
       alert("Error updating user. Please try again.");
     }
   };
 
-  // Filter users based on search and filter
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.user_id?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesMembership = !filterMembership || user.membership_type === filterMembership;
-    return matchesSearch && matchesMembership;
-  });
+  // Filter users based on search and filter (now handled by API)
+  const filteredUsers = users;
+
+  // Calculate stats from real data
+  const totalMembers = users.length;
+  const activeMembers = users.filter(u => u.membership_status === 'Active').length;
+  const premiumPlans = users.filter(u => u.membership_type?.includes("Premium")).length;
 
   return (
     <StaffLayout>
@@ -93,14 +183,59 @@ const MemberManagement = () => {
           <p className="text-gray-300">List of all registered users with their details</p>
         </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gray-800 rounded-xl border border-red-600/50 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm">Total Members</p>
+                <p className="text-2xl font-bold text-white mt-2">{totalMembers}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-xl border border-red-600/50 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm">Active Members</p>
+                <p className="text-2xl font-bold text-white mt-2">{activeMembers}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-xl border border-red-600/50 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-300 text-sm">Premium Plans</p>
+                <p className="text-2xl font-bold text-white mt-2">{premiumPlans}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Search and Filters */}
         <div className="bg-gray-800 rounded-xl border border-red-600/50 p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Search Members</label>
-              <input
-                type="text"
-                placeholder="Search by name, email, or ID..."
+              <input 
+                type="text" 
+                placeholder="Search by name or email..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
@@ -108,7 +243,7 @@ const MemberManagement = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Filter by Membership</label>
-              <select
+              <select 
                 value={filterMembership}
                 onChange={(e) => setFilterMembership(e.target.value)}
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
@@ -121,184 +256,161 @@ const MemberManagement = () => {
             </div>
             <div className="flex items-end">
               <button
-                onClick={() => { setSearchTerm(""); setFilterMembership(""); }}
-                className="w-full border border-gray-600 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200"
+                onClick={fetchUsers}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-500 disabled:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 w-full flex items-center justify-center gap-2"
               >
-                Clear Filters
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh Data
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gray-800 rounded-lg p-4 border border-red-600/50">
-            <p className="text-gray-300 text-sm">Total Members</p>
-            <p className="text-2xl font-bold text-white">{users.length}</p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-green-600/50">
-            <p className="text-gray-300 text-sm">Active Members</p>
-            <p className="text-2xl font-bold text-white">
-              {users.filter(u => u.membership_type && u.membership_type !== "N/A").length}
-            </p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-blue-600/50">
-            <p className="text-gray-300 text-sm">Premium Plans</p>
-            <p className="text-2xl font-bold text-white">
-              {users.filter(u => u.membership_type?.includes("Premium")).length}
-            </p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-yellow-600/50">
-            <p className="text-gray-300 text-sm">Staff Accounts</p>
-            <p className="text-2xl font-bold text-white">
-              {users.filter(u => u.role === "staff").length}
-            </p>
-          </div>
-        </div>
-
-        {/* User Table */}
+        {/* Members Table */}
         <div className="bg-gray-800 rounded-xl border border-red-600/50 shadow-lg">
-          <div className="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Member List</h2>
-            <span className="text-gray-400 text-sm">
-              {filteredUsers.length} of {users.length} members
-            </span>
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white">Member Records</h2>
+            <p className="text-gray-400 text-sm">
+              {loading ? 'Loading...' : `${filteredUsers.length} members found`}
+            </p>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                <p className="text-gray-300">Loading members...</p>
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-750">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-750">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Contact</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Membership</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {loading ? (
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">User ID</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Picture</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Full Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Gender</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Contact</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Membership</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Role</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Actions</th>
+                    <td colSpan="6" className="px-4 py-8 text-center text-gray-400">
+                      <div className="flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mr-3"></div>
+                        Loading members data...
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-750 transition-colors">
-                        <td className="px-4 py-3 text-white font-mono text-sm">{user.user_id || user.id}</td>
-                        <td className="px-4 py-3">
-                          {user.picture ? (
-                            <img
-                              src={`http://localhost:8000/storage/${user.picture}`}
-                              alt={user.name || "User"}
-                              className="w-10 h-10 rounded-full object-cover border border-gray-600"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center text-gray-400 text-sm">
-                              No Photo
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-white font-medium">{user.name}</td>
-                        <td className="px-4 py-3 text-gray-300">{user.email}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            user.gender === 'Male' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                            user.gender === 'Female' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' :
-                            'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                          }`}>
-                            {user.gender || 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-300">{user.contact || 'N/A'}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            user.membership_type?.includes('Premium') ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                            user.membership_type?.includes('Yearly') ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                            'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                          }`}>
-                            {user.membership_type || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            user.role === 'admin' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                            user.role === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                            'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                          }`}>
-                            {user.role || "Member"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEdit(user)}
-                              className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition-colors duration-200 border border-blue-500"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(user.id)}
-                              className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm transition-colors duration-200 border border-red-500"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="9" className="px-4 py-8 text-center text-gray-400">
-                        No members found matching your criteria.
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-750 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="text-white font-medium">{user.name}</div>
+                        <div className="text-gray-400 text-sm">{user.gender}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-300">{user.email}</td>
+                      <td className="px-4 py-3 text-gray-300">{user.contact || 'N/A'}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                          {user.membership_type || 'No Plan'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                          user.membership_status === 'Active' 
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                        }`}>
+                          {user.membership_status || 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                            title="Edit User"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.id)}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete User"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-gray-400">
+                      No members found matching your criteria.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer */}
+          <div className="px-6 py-4 border-t border-gray-700 flex justify-between items-center">
+            <div className="text-gray-400 text-sm">
+              Showing {filteredUsers.length} of {users.length} members
             </div>
-          )}
+            <div className="text-gray-400 text-sm">
+              Last updated: {new Date().toLocaleTimeString()}
+            </div>
+          </div>
         </div>
 
         {/* Edit Modal */}
         {editingUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-800 rounded-xl border border-red-600/50 shadow-lg w-full max-w-md">
-              <div className="px-6 py-4 border-b border-gray-700">
-                <h3 className="text-xl font-bold text-white">Edit Member</h3>
-              </div>
-              <div className="p-6 space-y-4">
+            <div className="bg-gray-800 rounded-xl border border-red-600/50 p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold text-white mb-4">Edit User</h3>
+              
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Gender</label>
                   <select
                     value={formData.gender}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">Select Gender</option>
                     {genderOptions.map((option) => (
@@ -306,60 +418,45 @@ const MemberManagement = () => {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Address</label>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
-                  />
-                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Contact</label>
                   <input
                     type="text"
                     value={formData.contact}
                     onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Membership Type</label>
                   <select
                     value={formData.membership_type}
                     onChange={(e) => setFormData({ ...formData, membership_type: e.target.value })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors"
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
-                    <option value="">Select Membership Type</option>
+                    <option value="">Select Membership</option>
                     {membershipOptions.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Role</label>
-                  <input
-                    type="text"
-                    value={formData.role}
-                    readOnly
-                    className="w-full bg-gray-600 border border-gray-500 rounded-lg px-3 py-2 text-gray-400 cursor-not-allowed"
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    onClick={handleUpdate}
-                    className="flex-1 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-red-500"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    onClick={() => setEditingUser(null)}
-                    className="flex-1 border border-gray-600 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={handleUpdate}
+                  className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex-1"
+                >
+                  Update User
+                </button>
+                <button
+                  onClick={() => setEditingUser(null)}
+                  className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex-1"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

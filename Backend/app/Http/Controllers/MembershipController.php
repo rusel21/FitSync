@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Membership;
+use App\Models\MembershipPlan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MembershipController extends Controller
 {
@@ -21,7 +23,7 @@ class MembershipController extends Controller
             return response()->json([
                 'message' => 'No active membership found',
                 'has_membership' => false
-            ], 404);
+            ], 200); // ✅ CHANGED: 404 → 200 (this is a successful request, just no data)
         }
 
         return response()->json([
@@ -29,7 +31,7 @@ class MembershipController extends Controller
             'membership' => [
                 'id' => $currentMembership->id,
                 'type' => $currentMembership->type,
-                'price' => $currentMembership->price,
+                'price' => (float) $currentMembership->price,
                 'start_date' => $currentMembership->start_date->format('Y-m-d'),
                 'end_date' => $currentMembership->end_date->format('Y-m-d'),
                 'status' => $currentMembership->status,
@@ -51,7 +53,7 @@ class MembershipController extends Controller
                 return [
                     'id' => $membership->id,
                     'type' => $membership->type,
-                    'price' => $membership->price,
+                    'price' => (float) $membership->price,
                     'start_date' => $membership->start_date->format('Y-m-d'),
                     'end_date' => $membership->end_date->format('Y-m-d'),
                     'status' => $membership->status,
@@ -74,13 +76,15 @@ class MembershipController extends Controller
             'start_date' => 'required|date|after_or_equal:today',
         ]);
 
-        DB::transaction(function () use ($user, $request) {
+        DB::beginTransaction();
+
+        try {
             // Deactivate current active membership if exists
             $user->memberships()
                 ->where('status', 'active')
                 ->update(['status' => 'cancelled']);
 
-            // Calculate end date and price
+            // Calculate end date and get price from MembershipPlan
             $endDate = Membership::calculateEndDate($request->type, $request->start_date);
             $price = Membership::getPrice($request->type);
 
@@ -98,59 +102,120 @@ class MembershipController extends Controller
             $user->update([
                 'membership_type' => $request->type
             ]);
-        });
 
-        return response()->json([
-            'message' => 'Membership updated successfully',
-            'membership' => $user->currentMembership
-        ]);
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Membership updated successfully',
+                'membership' => [
+                    'id' => $membership->id,
+                    'type' => $membership->type,
+                    'price' => (float) $membership->price,
+                    'start_date' => $membership->start_date->format('Y-m-d'),
+                    'end_date' => $membership->end_date->format('Y-m-d'),
+                    'status' => $membership->status,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating membership: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to update membership',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    // Get available membership plans
+    // Get available membership plans - USES SEEDED DATA FROM MEMBERSHIP PLAN TABLE
     public function getMembershipPlans()
     {
-        $plans = [
-            [
-                'type' => 'Premium',
-                'price' => 99.00,
-                'billing_cycle' => 'monthly',
-                'features' => ['All gym access', 'Personal trainer', 'Nutrition planning', 'Priority booking']
-            ],
-            [
-                'type' => 'Yearly',
-                'price' => 79.00,
-                'billing_cycle' => 'monthly',
-                'features' => ['All gym access', 'Group classes', 'Fitness assessment']
-            ],
-            [
-                'type' => 'Quarterly',
-                'price' => 89.00,
-                'billing_cycle' => 'monthly',
-                'features' => ['All gym access', 'Group classes']
-            ],
-            [
-                'type' => 'Monthly',
-                'price' => 99.00,
-                'billing_cycle' => 'monthly',
-                'features' => ['All gym access', 'Basic equipment']
-            ],
-            [
-                'type' => 'Semi-Monthly Plan',
-                'price' => 45.00,
-                'billing_cycle' => 'semi-monthly',
-                'features' => ['Basic gym access']
-            ],
-            [
-                'type' => 'Daily Plan',
-                'price' => 10.00,
-                'billing_cycle' => 'daily',
-                'features' => ['Single day access']
-            ]
-        ];
+        try {
+            // Get active plans from database - these are your seeded plans
+            $plans = MembershipPlan::active()
+                ->orderBy('price', 'asc')
+                ->get()
+                ->map(function ($plan) {
+                    return [
+                        'type' => $plan->type,
+                        'name' => $plan->name,
+                        'price' => (float) $plan->price,
+                        'original_price' => (float) $plan->original_price,
+                        'discount' => $plan->discount,
+                        'duration' => $plan->duration,
+                        'billing_cycle' => $this->getBillingCycle($plan->type),
+                        'features' => $plan->perks ?: [],
+                        'is_popular' => $plan->type === 'Monthly Plan', // Mark Monthly as popular
+                    ];
+                })->toArray();
 
-        return response()->json([
-            'plans' => $plans
-        ]);
+            return response()->json([
+                'plans' => $plans
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching membership plans: ' . $e->getMessage());
+            
+            // Fallback to your actual seeded data structure
+            return response()->json([
+                'plans' => [
+                    [
+                        'type' => 'Daily Plan',
+                        'name' => 'Daily Pass',
+                        'price' => 50.00,
+                        'original_price' => 50.00,
+                        'discount' => '0%',
+                        'duration' => '1 Day',
+                        'billing_cycle' => 'daily',
+                        'features' => [
+                            'Single day access',
+                            'Basic equipment usage',
+                            'Locker access',
+                            'Shower facilities'
+                        ],
+                        'is_popular' => false
+                    ],
+                    [
+                        'type' => 'Semi-Monthly Plan',
+                        'name' => 'Semi-Monthly Plan',
+                        'price' => 350.00,
+                        'original_price' => 400.00,
+                        'discount' => '12%',
+                        'duration' => '15 Days',
+                        'billing_cycle' => 'semi-monthly',
+                        'features' => [
+                            '15 days unlimited access',
+                            'All equipment usage',
+                            'Locker access',
+                            'Shower facilities',
+                            'Free towel service',
+                            'Basic fitness assessment'
+                        ],
+                        'is_popular' => false
+                    ],
+                    [
+                        'type' => 'Monthly Plan',
+                        'name' => 'Monthly Membership',
+                        'price' => 500.00,
+                        'original_price' => 600.00,
+                        'discount' => '17%',
+                        'duration' => '30 Days',
+                        'billing_cycle' => 'monthly',
+                        'features' => [
+                            '30 days unlimited access',
+                            'All equipment usage',
+                            'Locker access',
+                            'Shower facilities',
+                            'Free towel service',
+                            'Basic fitness assessment',
+                            '2 free personal training sessions',
+                            'Nutrition consultation'
+                        ],
+                        'is_popular' => true
+                    ]
+                ]
+            ]);
+        }
     }
 
     // Cancel current membership
@@ -163,19 +228,49 @@ class MembershipController extends Controller
         if (!$currentMembership) {
             return response()->json([
                 'message' => 'No active membership found'
-            ], 404);
+            ], 200); // ✅ CHANGED: 404 → 200 (successful request, just no membership to cancel)
         }
 
-        $currentMembership->update([
-            'status' => 'cancelled'
-        ]);
+        DB::beginTransaction();
 
-        $user->update([
-            'membership_type' => null
-        ]);
+        try {
+            $currentMembership->update([
+                'status' => 'cancelled'
+            ]);
 
-        return response()->json([
-            'message' => 'Membership cancelled successfully'
-        ]);
+            $user->update([
+                'membership_type' => null
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Membership cancelled successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error cancelling membership: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to cancel membership',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get billing cycle based on plan type
+     */
+    private function getBillingCycle($type)
+    {
+        return match($type) {
+            'Daily Plan' => 'daily',
+            'Semi-Monthly Plan' => 'semi-monthly',
+            'Monthly Plan' => 'monthly',
+            'Premium' => 'monthly',
+            'Quarterly' => 'quarterly',
+            'Yearly' => 'yearly',
+            default => 'monthly',
+        };
     }
 }
